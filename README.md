@@ -53,6 +53,12 @@ MinIO (Events)       ────┘
 - **Basic SQL** knowledge helpful
 - **Git** for version control
 
+This project’s `docker-compose.yml` specifies `platform: linux/arm64`.  
+If you are running on a different architecture (e.g., `amd64` on most desktops/laptops), you may need to:
+- Remove the `platform` line (if compatible images exist), or
+- Adjust to `platform: linux/amd64` accordingly, or
+- Use multi-architecture images that support your system.
+
 ### Installation
 
 ```bash
