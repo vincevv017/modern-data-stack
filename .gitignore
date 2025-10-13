@@ -1,4 +1,6 @@
-
 # JAR files - dependencies, not source code
 *.jar
 trino/trino-jars/
+
+# Exception: Hive Metastore needs this specific JAR
+!hive-metastore/postgresql-42.6.0.jar
