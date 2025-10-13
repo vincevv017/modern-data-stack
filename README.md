@@ -12,7 +12,7 @@ A complete modern data lakehouse implementation using 100% open-source tools, de
 
 - **Data Federation**: Query across PostgreSQL, MySQL, and object storage (MinIO) in real-time without data movement
 - **Modern Transformations**: SQL-based data modeling with dbt Core, version-controlled and tested
-- **Semantic Layer**: Business metrics with Cube.js including row-level and column-level security
+- **Semantic Layer**: Business metrics with Cube.js including pre-aggregation
 - **Self-Service BI**: Dashboards with Metabase for business users
 - **Data Sovereignty**: 100% self-hosted, GDPR-compliant architecture
 - **Infrastructure as Code**: All configurations in Git, enabling true DataOps practices
