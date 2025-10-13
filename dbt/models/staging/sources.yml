@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: postgres_raw
+    description: Orders from PostgreSQL
+    schema: public
+    tables:
+      - name: orders
+      
+  - name: lakehouse_raw
+    description: User events from lakehouse (Parquet on MinIO)
+    database: lakehouse
+    schema: raw_data
+    tables:
+      - name: user_events
+        
+  - name: mysql_raw
+    description: Products and suppliers from MySQL
+    database: mysql
+    schema: catalog_db
+    tables:
+      - name: products
+      - name: suppliers

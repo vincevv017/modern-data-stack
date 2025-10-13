@@ -1,0 +1,13 @@
+lakehouse:
+  target: dev
+  outputs:
+    dev:
+      type: trino
+      method: none
+      user: admin
+      host: trino
+      port: 8080
+      catalog: postgres
+      schema: analytics
+      threads: 4
+      http_scheme: http

@@ -1,0 +1,67 @@
+-- Create orders table
+CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    order_date DATE NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    discount_code VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'completed'
+);
+
+-- Insert sample data
+INSERT INTO orders (customer_id, product_id, order_date, amount, status) VALUES
+(101, 501, '2023-01-15', 299.99, 'completed'),
+(102, 502, '2023-01-20', 49.99, 'completed'),
+(103, 503, '2023-02-10', 599.99, 'completed'),
+(101, 504, '2023-02-15', 149.99, 'completed'),
+(104, 501, '2023-03-05', 299.99, 'completed'),
+(105, 505, '2023-03-20', 89.99, 'completed'),
+(102, 502, '2023-04-10', 49.99, 'completed'),
+(103, 506, '2023-04-25', 199.99, 'completed'),
+(106, 501, '2023-05-12', 299.99, 'completed'),
+(107, 507, '2023-05-28', 399.99, 'completed'),
+(101, 502, '2023-06-15', 49.99, 'completed'),
+(108, 503, '2023-06-30', 599.99, 'completed'),
+(103, 501, '2023-07-14', 299.99, 'completed'),
+(109, 505, '2023-07-22', 89.99, 'completed'),
+(102, 506, '2023-08-08', 199.99, 'completed'),
+(110, 504, '2023-08-19', 149.99, 'completed'),
+(104, 507, '2023-09-03', 399.99, 'completed'),
+(105, 501, '2023-09-17', 299.99, 'completed'),
+(111, 502, '2023-10-05', 49.99, 'completed'),
+(106, 503, '2023-10-21', 599.99, 'completed'),
+(107, 505, '2023-11-12', 89.99, 'completed'),
+(112, 506, '2023-11-28', 199.99, 'completed'),
+(108, 501, '2023-12-10', 299.99, 'completed'),
+(103, 507, '2023-12-24', 399.99, 'completed'),
+(109, 502, '2024-01-08', 49.99, 'completed'),
+(113, 504, '2024-01-22', 149.99, 'completed'),
+(110, 503, '2024-02-14', 599.99, 'completed'),
+(104, 505, '2024-02-28', 89.99, 'completed'),
+(114, 506, '2024-03-15', 199.99, 'completed'),
+(111, 501, '2024-03-29', 299.99, 'completed'),
+(105, 507, '2024-04-12', 399.99, 'completed'),
+(115, 502, '2024-04-26', 49.99, 'completed'),
+(112, 503, '2024-05-10', 599.99, 'completed'),
+(106, 504, '2024-05-24', 149.99, 'completed'),
+(116, 505, '2024-06-07', 89.99, 'completed'),
+(113, 506, '2024-06-21', 199.99, 'completed'),
+(107, 501, '2024-07-05', 299.99, 'completed'),
+(117, 507, '2024-07-19', 399.99, 'completed'),
+(114, 502, '2024-08-02', 49.99, 'completed'),
+(108, 503, '2024-08-16', 599.99, 'completed'),
+(118, 504, '2024-09-01', 149.99, 'completed'),
+(115, 505, '2024-09-15', 89.99, 'completed'),
+(109, 506, '2024-10-03', 199.99, 'completed'),
+(119, 501, '2024-10-17', 299.99, 'completed'),
+(116, 507, '2024-11-02', 399.99, 'completed'),
+(110, 502, '2024-11-16', 49.99, 'completed'),
+(120, 503, '2024-12-05', 599.99, 'completed'),
+(117, 504, '2024-12-20', 149.99, 'completed'),
+(111, 505, '2025-01-10', 89.99, 'completed'),
+(121, 506, '2025-01-24', 199.99, 'completed');
+
+CREATE INDEX idx_orders_date ON orders(order_date);
+CREATE INDEX idx_orders_customer ON orders(customer_id);
+CREATE INDEX idx_orders_product ON orders(product_id);

@@ -1,0 +1,19 @@
+name: 'greencard_analytics'
+version: '1.0.0'
+config-version: 2
+profile: 'lakehouse'
+
+model-paths: ["models"]
+test-paths: ["tests"]
+
+models:
+  greencard_analytics:
+    staging:
+      +materialized: table
+      +schema: staging
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts

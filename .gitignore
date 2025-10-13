@@ -1,0 +1,4 @@
+
+# JAR files - dependencies, not source code
+*.jar
+trino/trino-jars/

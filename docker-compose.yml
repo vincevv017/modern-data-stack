@@ -1,0 +1,230 @@
+services:
+  #############################################################################
+  # STORAGE - MinIO (S3-compatible object storage)
+  #############################################################################
+  minio:
+    image: minio/minio:latest
+    container_name: lakehouse-minio
+    platform: linux/arm64
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - lakehouse-network
+
+  mc:
+    image: minio/mc:latest
+    container_name: lakehouse-mc
+    platform: linux/arm64
+    networks:
+      - lakehouse-network
+    entrypoint: >
+      /bin/sh -c "
+      echo '⏳ Waiting for MinIO server...';
+      sleep 10;
+      echo '🔗 Setting alias';
+      mc alias set myminio http://minio:9000 admin password123;
+      echo '📦 Creating buckets';
+      mc mb myminio/warehouse --ignore-existing;
+      mc mb myminio/raw-data --ignore-existing;
+      echo '✅ MinIO setup complete';
+      exec /bin/sh
+      "
+    stdin_open: true
+    tty: true
+
+  #############################################################################
+  # HIVE METASTORE - Required for lakehouse table operations
+  #############################################################################
+  metastore-db:
+    image: postgres:15-alpine
+    container_name: lakehouse-metastore-db
+    platform: linux/arm64
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive123
+      POSTGRES_DB: metastore
+    volumes:
+      - metastore-db-data:/var/lib/postgresql/data
+    networks:
+      - lakehouse-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hive-metastore:
+    image: apache/hive:4.0.0
+    container_name: lakehouse-hive-metastore
+    platform: linux/arm64
+    ports:
+      - "9083:9083"
+    volumes:
+      - ./hive-metastore/postgresql-42.6.0.jar:/opt/hive/lib/postgresql-42.6.0.jar
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      SERVICE_OPTS: >-
+        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://metastore-db:5432/metastore
+        -Djavax.jdo.option.ConnectionUserName=hive
+        -Djavax.jdo.option.ConnectionPassword=hive123
+    depends_on:
+      metastore-db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - lakehouse-network
+
+  #############################################################################
+  # SOURCE DATABASES
+  #############################################################################
+  postgres:
+    image: postgres:15-alpine
+    container_name: lakehouse-postgres
+    platform: linux/arm64
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: greencard
+      POSTGRES_PASSWORD: greencard123
+      POSTGRES_DB: orders_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts/postgres:/docker-entrypoint-initdb.d
+    networks:
+      - lakehouse-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U greencard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    container_name: lakehouse-mysql
+    platform: linux/arm64
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: catalog_db
+      MYSQL_USER: greencard
+      MYSQL_PASSWORD: greencard123
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-scripts/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - lakehouse-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  #############################################################################
+  # QUERY ENGINE - Trino (Federation)
+  #############################################################################
+  trino:
+    image: trinodb/trino:435
+    container_name: lakehouse-trino
+    platform: linux/arm64
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./trino/catalog:/etc/trino/catalog
+      - ./trino/config/config.properties:/etc/trino/config.properties
+    networks:
+      - lakehouse-network
+    depends_on:
+      - postgres
+      - mysql
+      - minio
+      - hive-metastore
+
+  #############################################################################
+  # TRANSFORMATION - dbt
+  #############################################################################
+  dbt:
+    build:
+      context: ./dbt-docker
+      dockerfile: Dockerfile
+    container_name: lakehouse-dbt
+    platform: linux/arm64
+    volumes:
+      - ./dbt:/usr/app
+      - ./dbt/profiles.yml:/root/.dbt/profiles.yml
+    working_dir: /usr/app
+    environment:
+      DBT_PROFILES_DIR: /root/.dbt
+    networks:
+      - lakehouse-network
+    depends_on:
+      - trino
+
+  #############################################################################
+  # SEMANTIC LAYER - Cube.js
+  #############################################################################
+  cubejs:
+    image: cubejs/cube:latest
+    container_name: lakehouse-cubejs
+    platform: linux/arm64
+    ports:
+      - "4000:4000"
+    environment:
+      CUBEJS_DEV_MODE: "true"
+      CUBEJS_DB_TYPE: trino
+      CUBEJS_DB_HOST: trino
+      CUBEJS_DB_PORT: 8080
+      CUBEJS_DB_CATALOG: postgres
+      CUBEJS_DB_SCHEMA: analytics_marts
+      CUBEJS_DB_USER: admin
+      CUBEJS_API_SECRET: mysecretkey123456789012345678901234
+      CUBEJS_EXTERNAL_DEFAULT: "true"
+      CUBEJS_SCHEDULED_REFRESH_DEFAULT: "true"
+    volumes:
+      - ./cube:/cube/conf
+    networks:
+      - lakehouse-network
+    depends_on:
+      - trino
+
+  #############################################################################
+  # BI TOOL - Metabase
+  #############################################################################
+  metabase:
+    image: metabase/metabase:latest
+    container_name: lakehouse-metabase
+    platform: linux/arm64
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: h2
+      MB_DB_FILE: /metabase-data/metabase.db
+      JAVA_OPTS: "-Xmx2g"
+    volumes:
+      - metabase-data:/metabase-data
+    networks:
+      - lakehouse-network
+    depends_on:
+      - trino
+
+networks:
+  lakehouse-network:
+    driver: bridge
+
+volumes:
+  minio-data:
+  postgres-data:
+  mysql-data:
+  metabase-data:
+  metastore-db-data:
