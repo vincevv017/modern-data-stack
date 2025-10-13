@@ -358,7 +358,7 @@ Built with amazing open-source projects:
 
 ## 📧 Contact
 
-**LinkedIn**: [LinkedIn Profile]([https://www.linkedin.com/in/vincent-vikor-8662984/])
+**LinkedIn**: [https://www.linkedin.com/in/vincent-vikor-8662984
 
 **Project Link**: https://github.com/vincevv017/modern-data-stack
 
