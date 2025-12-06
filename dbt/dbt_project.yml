@@ -11,9 +11,19 @@ models:
     staging:
       +materialized: table
       +schema: staging
+      +properties:
+        format: "'PARQUET'"
+        
     intermediate:
       +materialized: table
       +schema: intermediate
+      +properties:
+        format: "'PARQUET'"
+        
     marts:
       +materialized: table
       +schema: marts
+      +properties:
+        format: "'PARQUET'"
+        partitioning: "ARRAY['month(order_date)']"
+        sorted_by: "ARRAY['order_date', 'customer_id']"

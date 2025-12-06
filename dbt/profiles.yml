@@ -7,7 +7,7 @@ lakehouse:
       user: admin
       host: trino
       port: 8080
-      catalog: postgres
-      schema: analytics
+      catalog: lakehouse
+      schema: dbt
       threads: 4
       http_scheme: http

@@ -1,5 +1,5 @@
 cube('Orders', {
-  sql: `SELECT * FROM postgres.analytics_marts.fct_orders`,
+  sql: `SELECT * FROM lakehouse.analytics_marts.fct_orders`,
   
   measures: {
     // ========== REVENUE METRICS ==========

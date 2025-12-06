@@ -4,3 +4,23 @@ trino/trino-jars/
 
 # Exception: Hive Metastore needs this specific JAR
 !hive-metastore/postgresql-42.6.0.jar
+
+# dbt generated files
+dbt/logs/
+dbt/target/
+dbt/dbt_packages/
+
+# IDE files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+
+# Docker volumes (if accidentally in repo)
+*-data/
+volumes/
