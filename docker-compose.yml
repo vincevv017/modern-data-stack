@@ -40,44 +40,48 @@ services:
     tty: true
 
   #############################################################################
-  # HIVE METASTORE - Required for lakehouse table operations
+  # POLARIS - Modern Iceberg REST Catalog (replaces Hive Metastore)
   #############################################################################
-  metastore-db:
+  polaris-db:
     image: postgres:15-alpine
-    container_name: lakehouse-metastore-db
+    container_name: lakehouse-polaris-db
     platform: linux/arm64
     environment:
-      POSTGRES_USER: hive
-      POSTGRES_PASSWORD: hive123
-      POSTGRES_DB: metastore
+      POSTGRES_USER: polaris
+      POSTGRES_PASSWORD: polaris123
+      POSTGRES_DB: polaris_catalog
     volumes:
-      - metastore-db-data:/var/lib/postgresql/data
+      - polaris-db-data:/var/lib/postgresql/data
     networks:
       - lakehouse-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hive"]
+      test: ["CMD-SHELL", "pg_isready -U polaris"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  hive-metastore:
-    image: apache/hive:4.0.0
-    container_name: lakehouse-hive-metastore
+  polaris:
+    image: apache/polaris:latest
+    container_name: lakehouse-polaris
     platform: linux/arm64
     ports:
-      - "9083:9083"
-    volumes:
-      - ./hive-metastore/postgresql-42.6.0.jar:/opt/hive/lib/postgresql-42.6.0.jar
+      - "8181:8181"
     environment:
-      SERVICE_NAME: metastore
-      DB_DRIVER: postgres
-      SERVICE_OPTS: >-
-        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
-        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://metastore-db:5432/metastore
-        -Djavax.jdo.option.ConnectionUserName=hive
-        -Djavax.jdo.option.ConnectionPassword=hive123
+      # Database configuration
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://polaris-db:5432/polaris_catalog
+      QUARKUS_DATASOURCE_USERNAME: polaris
+      QUARKUS_DATASOURCE_PASSWORD: polaris123
+      
+      # AWS/S3 configuration for MinIO
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password123
+      
+      # Logging
+      QUARKUS_LOG_LEVEL: INFO
+      
     depends_on:
-      metastore-db:
+      polaris-db:
         condition: service_healthy
       minio:
         condition: service_started
@@ -135,7 +139,7 @@ services:
   # QUERY ENGINE - Trino (Federation)
   #############################################################################
   trino:
-    image: trinodb/trino:435
+    image: trinodb/trino:latest
     container_name: lakehouse-trino
     platform: linux/arm64
     ports:
@@ -149,7 +153,7 @@ services:
       - postgres
       - mysql
       - minio
-      - hive-metastore
+      - polaris
 
   #############################################################################
   # TRANSFORMATION - dbt
@@ -227,4 +231,4 @@ volumes:
   postgres-data:
   mysql-data:
   metabase-data:
-  metastore-db-data:
+  polaris-db-data:
