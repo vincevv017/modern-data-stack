@@ -1,377 +1,377 @@
-# Vendor-Agnostic Modern Data Stack
-
-A complete modern data lakehouse implementation using 100% open-source tools, demonstrating federation, transformation, and analytics with full data sovereignty.
+# Modern Data Stack - Vendor-Agnostic Open Source Architecture
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://www.docker.com/)
-[![Open Source](https://img.shields.io/badge/Open%20Source-100%25-green)](https://opensource.org/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
+[![Apache Polaris](https://img.shields.io/badge/catalog-Apache%20Polaris-orange.svg)](https://polaris.apache.org/)
+[![Trino](https://img.shields.io/badge/federation-Trino-blue.svg)](https://trino.io/)
 
----
+> A complete, production-ready modern data stack built entirely with open-source components. Demonstrates cross-database federation, lakehouse architecture with Apache Iceberg, dbt transformations, semantic layer, and self-service BI—all vendor-agnostic and Git-based.
 
-## 🎯 What This Project Demonstrates
+## 🎯 What This Stack Delivers
 
-- **Data Federation**: Query across PostgreSQL, MySQL, and object storage (MinIO) in real-time without data movement
-- **Modern Transformations**: SQL-based data modeling with dbt Core, version-controlled and tested
-- **Semantic Layer**: Business metrics with Cube.js including pre-aggregation
-- **Self-Service BI**: Dashboards with Metabase for business users
-- **Data Sovereignty**: 100% self-hosted, GDPR-compliant architecture
-- **Infrastructure as Code**: All configurations in Git, enabling true DataOps practices
-- **Hybrid Deployment**: Architecture supports mixing self-hosted and managed cloud services
+**v2.0:** Migrated from Hive Metastore to **Apache Polaris** (Iceberg REST catalog) for modern lakehouse capabilities with improved authentication and setup automation.
 
-**Read the full article**: [Is a Vendor-Agnostic Modern Data Stack Possible?](LINK_TO_YOUR_LINKEDIN_ARTICLE)
+This implementation proves that enterprise-grade data architecture is achievable without vendor lock-in:
+- ✅ **Cross-database federation** via Trino - query PostgreSQL, MySQL, and object storage simultaneously
+- ✅ **Modern lakehouse** with Apache Polaris and Iceberg - ACID transactions, time travel, schema evolution
+- ✅ **Git-based transformations** with dbt - version-controlled SQL models
+- ✅ **Semantic layer** with Cube.js - centralized metrics and governance
+- ✅ **Self-service analytics** with Metabase - drag-and-drop visualization
+- ✅ **Full data sovereignty** - complete control over data location and processing
+- ✅ **Hybrid-ready** - mix self-hosted with managed services as needed
 
----
+**Processing synthetic e-commerce data:** Orders from PostgreSQL → Product catalogs from MySQL → User events from object storage → Unified analytics layer.
 
 ## 🏗️ Architecture
-
 ```
-PostgreSQL (Orders)  ────┐
-MySQL (Products)     ────┼──> Trino ──> dbt ──> Cube.js ──> Metabase
-MinIO (Events)       ────┘
-```
-
-### Technology Stack
-
-| Layer | Tool | Purpose |
-|-------|------|---------|
-| **Storage** | MinIO | S3-compatible object storage for lakehouse |
-| **Databases** | PostgreSQL, MySQL | Operational data sources |
-| **Federation** | Trino | Cross-database query engine (35+ connectors) |
-| **Transformation** | dbt Core | SQL-based data modeling with testing |
-| **Semantic** | Cube.js | Metrics layer with RLS/CLS and caching |
-| **Visualization** | Metabase | Self-service BI platform |
-| **Orchestration** | Docker Compose | Local deployment and coordination |
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Docker** and **Docker Compose** installed
-- **16GB RAM** minimum (8GB works but slower)
-- **Basic SQL** knowledge helpful
-- **Git** for version control
+                    Modern Data Stack v2 Architecture
+                    
+┌─────────────────────────────────────────────────────────────────┐
+│                        DATA SOURCES                              │
+├─────────────────────────────────────────────────────────────────┤
+│  PostgreSQL        MySQL           MinIO (S3-compatible)        │
+│  (Orders)          (Products)      (User Events - Parquet)      │
+└──────┬─────────────└──────┬─────────────└─────────────────────┘
+       │             │               │
+       └─────────────┴───────────────┘
+                     │
+       ┌─────────────▼──────────────┐
+       │   FEDERATION LAYER          │
+       │   Trino (35+ connectors)    │
+       │   Real-time cross-DB joins  │
+       └─────────────┬───────────────┘
+                     │
+       ┌─────────────▼──────────────┐
+       │   LAKEHOUSE CATALOG         │
+       │   Apache Polaris            │
+       │   (Iceberg REST Catalog)    │
+       │   - OAuth authentication    │
+       │   - ACID transactions       │
+       │   - Schema evolution        │
+       └─────────────┬───────────────┘
+                     │
+       ┌──�       ┌──�       ┌──�       ───────────┐
+       │   TRANSFORMATION LAYER      │
+       │   dbt Core                  │
+       │   - Staging → Intermediate  │
+       │   - → Marts (star schema)   │
+       │   - Writes Iceberg tables   │
+       └─────────────┬───────────────┘
+                     │
+       ┌─────────────▼──────────────┐
+       │   SEMANTIC LAYER            │
+       │   Cube.js                   │
+       │   - Metrics definitions     │
+       │   - Access control          │
+       │   - Pre-aggregations        │
+       └─────────────┬───────────────┘
+                     │
+       ┌─────────────▼──────────────┐
+       │   VISUALIZATION             │
+       │   Metabase                  │
+       │   - Self-service BI         │
+       │   - Interactive dashboards  │
+       └─────────�       └──�       └─────────�    �
+       └─────────�    
+- Docker Desktop (with Docker Compose)
+- 8GB RAM minimum (16GB recommended)
+- 10GB free disk space
 
 ### Installation
-
 ```bash
-# 1. Clone the repository
+# Clone repository
 git clone https://github.com/vincevv017/modern-data-stack.git
 cd modern-data-stack
 
-# 2. Start all services (takes 2-3 minutes)
+# Start all services (takes 2-3 minutes)
 docker compose up -d
 
-# 3. Wait for services to be ready
-sleep 120
+# Wait for services to initialize
+sleep 30
 
-# 4. Run dbt transformations to build analytics tables
+# Setup Apache Polaris catalog (auto-detects credentials)
+bash init-scripts/polaris/setup-polaris.sh
+
+# Create lakehouse schemas
+bash init-scripts/polaris/setup-lakehouse-schemas.sh
+
+# Run dbt transformations
 docker compose exec dbt dbt run
+
+# Verify setup
+docker compose exec trino trino --execute "SHOW CATALOGS;"
+docker compose exec trino trino --execute "SHOW SCHEMAS IN lakehouse;"
 ```
 
-### Access the User Interfaces
+### Access Points
 
-- **Trino UI**: http://localhost:8080
-- **Cube.js Playground**: http://localhost:4000
-- **Metabase**: http://localhost:3000
-- **MinIO Console**: http://localhost:9001
-  - Username: `admin`
-  - Password: `password123`
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| **Trino UI** | http://localhost:8080 | None (auto-login as admin) |
+| **Cube.js Playground** | http://localhost:4000 | None |
+| **Metabase** | http://localhost:3000 | Setup on first visit |
+| **MinIO Console** | http://localhost:9001 | admin / password123 |
+| **Polaris API** | http://localhost:8181 | OAuth (auto-configured) |
 
-### Try the Demo Query
+## 📊 Demo Query
 
-Test federation across all data sources:
-
+Experience the full stack with this federation query:
 ```bash
 docker compose exec trino trino --execute "
 SELECT 
     product_name,
     supplier_country,
-    SUM(revenue) as total_revenue
-FROM postgres.analytics_marts.fct_orders
+    COUNT(*) as order_count,
+    SUM(revenue) as total_revenue,
+    AVG(revenue) as avg_revenue
+FROM lakehouse.dbt_marts.fct_orders
 GROUP BY product_name, supplier_country
 ORDER BY total_revenue DESC
-LIMIT 5;"
+LIMIT 10;"
 ```
 
-This query joins data across PostgreSQL and MySQL, applies dbt transformations, and returns aggregated results—demonstrating the entire stack in one command.
+This query:
+1. Reads from dbt-transformed Iceberg tables in the lakehouse
+2. Aggregates data with ACID guarantees
+3. Returns business metrics ready for visualization
 
----
+## 🔧 What's New in v2.0
 
-## 📊 Sample Data
+### Major Changes
 
-The stack includes synthetic e-commerce data:
+#### 1. **Apache Polaris Integration** (replaces Hive Metastore)
+- Modern Iceberg REST catalog with OAuth authentication
+- Auto-credential detection from Polaris logs
+- Comprehensive setup scripts with error handling
+- Proper role-based access control (RBAC)
 
-- **PostgreSQL**: 50+ order transactions with amounts, dates, and statuses
-- **MySQL**: Product catalog with 7 products and 5 suppliers across multiple countries
-- **MinIO**: User event data in Parquet format (page views, add-to-cart events)
+#### 2. **dbt Writes to Lakehouse**
+- dbt now writes Iceberg tables directly to lakehouse
+- Separation of storage (MinIO/S3) and compute (Trino)
+- ACID transactions for analytics tables
+- Time travel and schema evolution support
 
-All sample data is automatically loaded when services start for the first time.
+#### 3. **Improved Setup Automation**
+- `setup-polaris.sh` - Main setup with auto-detection
+- `setup-lakehouse-schemas.sh` - Schema initialization
+- `recreate-catalog.sh` - Quick catalog recreation
+- `check-what-broke.sh` - Diagnostic troubleshooting
 
----
+#### 4. **Critical Configuration Discovery**
+- `fs.native-s3.enabled=true` enables Trino native S3
+- Required for Polaris REST catalog with MinIO
+- Fixes "No factory for location" errors
 
-## 🔧 Project Structure
+### Breaking Changes from v1
+- Hive Metastore container removed
+- `lakehouse.properties` now uses `iceberg.rest-catalog.*` properties
+- New initialization workflow required
+- OAuth credentials must be configured
 
+## 📁 Project Structure
 ```
 modern-data-stack/
-├── docker-compose.yml           # Infrastructure as code
-├── .gitignore                   # Git exclusions
-├── README.md                    # This file
-├── LICENSE                      # MIT License
-├── cube/
-│   ├── cube.js                  # Cube.js configuration
-│   └── model/
-│       └── Orders.js            # Semantic layer definitions
-├── dbt/
-│   ├── dbt_project.yml          # dbt configuration
-│   ├── profiles.yml             # Connection profiles
-│   └── models/
-│       ├── staging/             # Source data cleaning
-│       ├── intermediate/        # Business logic
-│       └── marts/               # Analytics-ready tables
-├── trino/
-│   ├── catalog/
-│   │   ├── postgres.properties  # PostgreSQL connector
-│   │   ├── mysql.properties     # MySQL connector
-│   │   └── lakehouse.properties # MinIO/Hive connector
-│   └── config/
-│       └── config.properties    # Trino configuration
+├── docker-compose.yml              # Infrastructure as code
 ├── init-scripts/
-│   ├── postgres/
-│   │   └── 01-init-greencard-data.sql
-│   └── mysql/
-│       └── 01-init-catalog-data.sql
-└── lakehouse-data/
-    └── user_events/     
-│       └── 01-init-catalog-data.sql # Sample lakehouse data
+│   ├── polaris/                    # Polaris setup scripts
+│   │   ├── setup-polaris.sh        # Main setup (use this)
+│   │   ├── setup-lakehouse-schemas.sh
+│   │   ├── recreate-catalog.sh     # Quick rebuild
+│   │   └── check-what-broke.sh     # Diagnostics
+│   ├── postgres/                   # PostgreSQL init
+│   └── mysql/                      # MySQL init
+├── trino/
+│   ├── catalog/                    # Data source configs
+│   │   ├── lakehouse.properties    # Polaris catalog
+│   │   ├── postgres.properties     # Orders DB
+│   │   └── mysql.properties        # Products DB
+│   └── config/
+│       └── config.properties       # Trino settings
+├── dbt/
+│   ├── dbt_project.yml
+│   ├── profiles.yml                # Trino connection
+│   └── models/
+│       ├── staging/                # Raw data models
+│       ├── intermediate/           # Business logic
+│       └── marts/                  # Analytics-ready facts
+├── cube/
+│   └── model/
+│       └── Orders.js               # Semantic layer definitions
+├── POLARIS_TRINO_CONFIG.md         # Configuration notes
+└── README.md
 ```
 
----
+## 🛠️ Common Operations
 
-## 💡 Key Features
-
-### Data Federation
-
-Query across multiple databases in real-time without ETL:
-
-```sql
--- Single query spanning three different systems
-SELECT 
-    o.order_id,
-    p.product_name,
-    s.country,
-    e.event_type
-FROM postgres.public.orders o
-LEFT JOIN mysql.catalog_db.products p ON o.product_id = p.id
-LEFT JOIN mysql.catalog_db.suppliers s ON p.supplier_id = s.id
-LEFT JOIN lakehouse.raw_data.user_events e ON o.customer_id = e.user_id;
-```
-
-### Semantic Layer with Security
-
-Cube.js provides:
-- **Single source of truth** for business metrics
-- **Pre-aggregations** for sub-second query performance
-- **Row-level security (RLS)** - restrict data by user role
-- **Column-level security (CLS)** - hide sensitive columns
-- **Multi-tenancy** support out of the box
-
-### Git-Based Development
-
-All configurations are version-controlled:
-
+### Managing Services
 ```bash
-# Make changes to dbt models
-vim dbt/models/marts/fct_orders.sql
+# View service status
+docker compose ps
 
-# Test locally
+# View logs
+docker compose logs -f polaris
+docker compose logs -f trino
+
+# Restart a service
+docker compose restart trino
+
+# Stop all services
+docker compose down
+
+# Stop and remove volumes (fresh start)
+docker compose down -v
+```
+
+### Polaris Catalog Management
+```bash
+# Check if catalog exists
+bash init-scripts/polaris/check-what-broke.sh
+
+# Recreate catalog (if needed)
+bash init-scripts/polaris/recreate-catalog.sh
+
+# View Polaris credentials
+docker compose logs polaris | grep "root principal credentials"
+```
+
+### Working with Trino
+```bash
+# Interactive Trino CLI
+docker compose exec trino trino
+
+# Example queries in CLI
+SHOW CATALOGS;
+SHOW SCHEMAS IN lakehouse;
+SHOW TABLES IN lakehouse.dbt_marts;
+
+# Exit: Ctrl+D or \q
+```
+
+### dbt Development
+```bash
+# Run all models
+docker compose exec dbt dbt run
+
+# Run specific model
 docker compose exec dbt dbt run --select fct_orders
+
+# Test data quality
 docker compose exec dbt dbt test
 
-# Commit to version control
-git add dbt/models/marts/fct_orders.sql
-git commit -m "Add customer segment to orders fact table"
-git push
-
-# Deploy to production (via CI/CD pipeline)
+# Generate documentation
+docker compose exec dbt dbt docs generate
 ```
-
----
-
-## 🔐 Security Features
-
-- **Data sovereignty** - complete control over data location (critical for GDPR compliance)
-- **Audit logging** - track all data access
-- **Network isolation** - services communicate on private Docker network
-
----
-
-## 📈 Scaling to Production
-
-This demo runs on Docker Compose. For production, consider:
-
-### Infrastructure Evolution
-- **Kubernetes**: Replace Docker Compose for orchestration and auto-scaling
-- **Cloud Storage**: AWS S3, Google Cloud Storage, or Azure Blob instead of MinIO
-- **Monitoring**: Prometheus + Grafana for observability
-- **Secrets Management**: HashiCorp Vault or cloud provider secrets
-- **CI/CD**: GitHub Actions or GitLab CI for automated testing and deployment
-
-### Managed Service Options
-
-Each component has enterprise managed alternatives:
-
-- **Starburst Galaxy**: Managed Trino with Warp Speed indexing and enterprise security
-- **dbt Cloud**: Automated scheduling, IDE, and AI-powered SQL generation
-- **Cube Cloud**: Auto-scaling, AI/BI frontend with agentic analytics
-- **Metabase Cloud**: Automated backups, Metabot AI assistant, alerts/subscriptions
-
-The architecture supports hybrid deployments—mix self-hosted and managed services based on your needs.
-
----
-
 
 ## 🐛 Troubleshooting
 
-### Services won't start
+### Polaris Catalog Issues
 
+**Problem:** Trino cannot see lakehouse catalog
 ```bash
-# Check service status
-docker compose ps
+# 1. Check Polaris is running
+docker compose ps polaris
 
-# View logs for specific service
-docker compose logs trino
-docker compose logs dbt
-docker compose logs cubejs
+# 2. Verify catalog exists in Polaris
+bash init-scripts/polaris/check-what-broke.sh
 
-# Restart specific service
-docker compose restart trino
+# 3. Check credentials in lakehouse.properties
+cat trino/catalog/lakehouse.properties
+
+# 4. Recreate catalog if needed
+bash init-scripts/polaris/recreate-catalog.sh
 ```
 
-### Query failures in Trino
+### Critical Configuration
 
-```bash
-# Verify catalogs are loaded
-docker compose exec trino trino --execute "SHOW CATALOGS;"
+See [POLARIS_TRINO_CONFIG.md](POLARIS_TRINO_CONFIG.md) for detailed configuration notes.
 
-# Check catalog connectivity
-docker compose exec trino trino --execute "SHOW SCHEMAS FROM postgres;"
-docker compose exec trino trino --execute "SHOW SCHEMAS FROM mysql;"
+**Key property for MinIO:**
+```properties
+fs.native-s3.enabled=true
 ```
 
-### dbt failures
+Without this, you'll get "No factory for location: s3://..." errors.
 
-```bash
-# Debug dbt connection
-docker compose exec dbt dbt debug
+### Cube.js Schema Issues
 
-# Run with verbose logging
-docker compose exec dbt dbt run --select <model> --full-refresh --debug
+Cube.js must reference `dbt_marts`, not `marts`:
+```yaml
+# docker-compose.yml
+CUBEJS_DB_SCHEMA: dbt_marts  # Not just "marts"
 ```
 
-### Reset everything
+## 🚀 Scaling to Production
 
-```bash
-# Stop and remove all containers and volumes
-docker compose down -v
+### Recommended Managed Services
 
-# Restart fresh
-docker compose up -d
-sleep 120
-docker compose exec dbt dbt run
+When scaling beyond proof-of-concept:
+
+1. **[Starburst Galaxy](https://www.starburst.io/)** (Trino)
+   - Enterprise query optimization (Warp Speed)
+   - Auto-scaling compute clusters
+   - 24/7 support and SLAs
+
+2. **[dbt Cloud](https://www.getdbt.com/product/dbt-cloud)** 
+   - Integrated development environment
+   - Automated scheduling and orchestration
+   - CI/CD pipelines
+
+3. **[Cube Cloud](https://cube.dev/cloud)**
+   - Auto-scaling for query spikes
+   - Built-in AI/BI interfaces
+   - Enhanced caching
+
+4. **[Metabase Cloud](https://www.metabase.com/pricing)**
+   - Automated backups and updates
+   - Natural language queries
+   - Alerting and monitoring
+
+### Hybrid Deployment Example
+```yaml
+# Mix open-source and managed services
+Storage: Self-hosted MinIO (data sovereignty)
+Catalog: Self-hosted Polaris (control)
+Compute: Starburst Galaxy (performance)
+Transform: dbt Cloud (productivity)
+Semantic: Cube Cloud (AI features)
+BI: Metabase Cloud (reliability)
 ```
 
----
+## 🎓 Learning Resources
 
-## 📚 Documentation
-
-- **Full Architecture Article**: [Link to LinkedIn article]
-- **Trino Documentation**: https://trino.io/docs/current/
-- **dbt Documentation**: https://docs.getdbt.com/
-- **Cube.js Documentation**: https://cube.dev/docs/
-- **Metabase Documentation**: https://www.metabase.com/docs/
-
----
+### Documentation
+- [Apache Polaris Docs](https://polaris.apache.org/docs/)
+- [Apache Iceberg Docs](https://iceberg.apache.org/docs/latest/)
+- [Trino Documentation](https://trino.io/docs/current/)
+- [dbt Documentation](https://docs.getdbt.com/)
+- [Cube.js Documentation](https://cube.dev/docs/)
+- [Metabase Documentation](https://www.metabase.com/docs/latest/)
 
 ## 🤝 Contributing
 
-Contributions are welcome! This project demonstrates architectural patterns and can be extended in many ways:
-
-### Potential Enhancements
-
-- **Apache Iceberg**: Implement full lakehouse capabilities (ACID transactions, time travel)
-- **Apache Airflow**: Add workflow orchestration for complex pipelines
-- **Great Expectations**: Add comprehensive data quality testing
-- **OpenLineage**: Implement end-to-end data lineage tracking
-
-### How to Contribute
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Test thoroughly (`docker compose up -d` and verify)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
----
-
-## ⚠️ Known Limitations
-
-### What Works
-✅ Federation across PostgreSQL, MySQL, and MinIO  
-✅ dbt transformations with testing  
-✅ Cube.js semantic layer with pre-aggregation
-✅ Metabase self-service analytics  
-✅ Docker Compose orchestration  
-✅ Version-controlled infrastructure  
-
-### What's Simplified
-⚠️ **Apache Iceberg**: The demo uses file-based Hive metastore with Parquet files rather than full Iceberg implementation due to JAR dependency complexity on Apple Silicon  
-⚠️ **Production readiness**: Docker Compose is suitable for development; production requires Kubernetes  
-⚠️ **Monitoring**: Basic health checks included; comprehensive monitoring requires Prometheus/Grafana  
-⚠️ **Security**: Development mode enabled; production requires OAuth/SAML, TLS, and secrets management  
-
-See the full article for details on what worked and what didn't during implementation.
-
----
+Contributions welcome! Areas for improvement:
+- Add more dbt models (metrics layer, KPIs)
+- Implement dbt tests and documentation
+- Create Cube.js dashboards
+- Add data quality checks
+- Implement incremental loading
+- Add more data sources
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details
+
+## 🙋 Questions & Support
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/vincevv017/modern-data-stack/issues)
+- **LinkedIn**: [Connect with me](https://www.linkedin.com/in/vincent-vikor-8662984/)
+
+## 🏷️ Tags
+
+`#DataEngineering` `#ModernDataStack` `#OpenSource` `#ApachePolaris` `#ApacheIceberg` `#Trino` `#dbt` `#VendorAgnostic` `#DataLakehouse` `#DataSovereignty`
 
 ---
 
-## 🙏 Acknowledgments
+**Built with ❤️ for the data community**
 
-Built with amazing open-source projects:
-- [Trino](https://trino.io) - Distributed SQL query engine
-- [dbt](https://www.getdbt.com) - Data transformation tool
-- [Cube.js](https://cube.dev) - Semantic layer platform
-- [Metabase](https://www.metabase.com) - Business intelligence tool
-- [MinIO](https://min.io) - S3-compatible object storage
-- [PostgreSQL](https://www.postgresql.org) - Relational database
-- [MySQL](https://www.mysql.com) - Relational database
-
----
-
-## 📧 Contact
-
-**LinkedIn**: [Your LinkedIn Profile]([https://www.linkedin.com/in/vincent-vikor-8662984/]
-
-**Project Link**: https://github.com/vincevv017/modern-data-stack
-
----
-
-## ⭐ Star History
-
-If this project helped you understand modern data architectures or saved you money on cloud bills, please consider giving it a star!
-
-[![Star History Chart](https://api.star-history.com/svg?repos=vincevv017/modern-data-stack&type=Date)](https://star-history.com/#vincevv017/modern-data-stack&Date)
-
----
-
-**Built with ❤️ for the open-source data community**
-
-*Demonstrating that vendor-agnostic, sovereignty-focused data infrastructure is not just possible—it's practical.*
+*Proving that vendor-agnostic, open-source data infrastructure is not just possible—it's practical.*
