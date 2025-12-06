@@ -189,8 +189,8 @@ services:
       CUBEJS_DB_TYPE: trino
       CUBEJS_DB_HOST: trino
       CUBEJS_DB_PORT: 8080
-      CUBEJS_DB_CATALOG: postgres
-      CUBEJS_DB_SCHEMA: analytics_marts
+      CUBEJS_DB_CATALOG: lakehouse
+      CUBEJS_DB_SCHEMA: dbt_marts
       CUBEJS_DB_USER: admin
       CUBEJS_API_SECRET: mysecretkey123456789012345678901234
       CUBEJS_EXTERNAL_DEFAULT: "true"
