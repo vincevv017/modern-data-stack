@@ -24,7 +24,7 @@ This implementation proves that enterprise-grade data architecture is achievable
 
 ## 🏗️ Architecture
 
-\`\`\`
+```
                     Modern Data Stack v2 Architecture
                     
 ┌─────────────────────────────────────────────────────────────────┐
@@ -49,7 +49,11 @@ This implementation proves that enterprise-grade data architecture is achievable
        │   - OAuth authentication    │
        │   - ACID transactions       │
        │   - Schema evolution        │
-       └─────────────┬────────────�       └─────────────┬��       └───────────�       └─────────────┬────────────�       └                  │
+       └─────────────┬───────────────┘
+                     │
+       ┌─────────────▼──────────────┐
+       │   TRANSFORMATION LAYER      │
+       │   dbt Core                  │
        │   - Staging → Intermediate  │
        │   - → Marts (star schema)   │
        │   - Writes Iceberg tables   │
@@ -68,15 +72,19 @@ This implementation proves that enterprise-grade data architecture is achievable
        │   Metabase                  │
        │   - Self-service BI         │
        │   - Interactive dashboards  │
-       └───────────────�       └───────────�
-       └───────────tes
+       └─────────────────────────────┘
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
 - Docker Desktop (with Docker Compose)
 - 8GB RAM minimum (16GB recommended)
 - 10GB free disk space
 
 ### Installation
 
-\`\`\`bash
+```bash
 # Clone repository
 git clone https://github.com/vincevv017/modern-data-stack.git
 cd modern-data-stack
@@ -92,13 +100,13 @@ bash init-scripts/polaris/setup-polaris.sh
 
 # Create lakehouse schemas
 bash init-scripts/polaris/setup-lakehouse-schemas.sh
-\`\`\`
+```
 
 ### Load Sample Data
 
 After schemas are created, load user events data into the lakehouse:
 
-\`\`\`bash
+```bash
 # Upload Parquet file to MinIO
 docker compose cp lakehouse-data/user_event/data-001.parquet mc:/tmp/
 docker compose exec mc mc cp /tmp/data-001.parquet myminio/raw-data/user_event/
@@ -134,7 +142,7 @@ docker compose exec dbt dbt run
 docker compose exec trino trino --execute "SHOW CATALOGS;"
 docker compose exec trino trino --execute "SHOW SCHEMAS IN lakehouse;"
 docker compose exec trino trino --execute "SHOW TABLES IN lakehouse.dbt_marts;"
-\`\`\`
+```
 
 ### Access Points
 
@@ -150,7 +158,7 @@ docker compose exec trino trino --execute "SHOW TABLES IN lakehouse.dbt_marts;"
 
 Experience the full stack with this federation query:
 
-\`\`\`bash
+```bash
 docker compose exec trino trino --execute "
 SELECT 
     product_name,
@@ -162,7 +170,7 @@ FROM lakehouse.dbt_marts.fct_orders
 GROUP BY product_name, supplier_country
 ORDER BY total_revenue DESC
 LIMIT 10;"
-\`\`\`
+```
 
 This query:
 1. Reads from dbt-transformed Iceberg tables in the lakehouse
@@ -186,25 +194,25 @@ This query:
 - Time travel and schema evolution support
 
 #### 3. **Improved Setup Automation**
-- \`setup-polaris.sh\` - Main setup with auto-detection
-- \`setup-lakehouse-schemas.sh\` - Schema initialization
-- \`recreate-catalog.sh\` - Quick catalog recreation
-- \`check-what-broke.sh\` - Diagnostic troubleshooting
+- `setup-polaris.sh` - Main setup with auto-detection
+- `setup-lakehouse-schemas.sh` - Schema initialization
+- `recreate-catalog.sh` - Quick catalog recreation
+- `check-what-broke.sh` - Diagnostic troubleshooting
 
 #### 4. **Critical Configuration Discovery**
-- \`fs.native-s3.enabled=true\` enables Trino native S3
+- `fs.native-s3.enabled=true` enables Trino native S3
 - Required for Polaris REST catalog with MinIO
 - Fixes "No factory for location" errors
 
 ### Breaking Changes from v1
 - Hive Metastore container removed
-- \`lakehouse.properties\` now uses \`iceberg.rest-catalog.*\` properties
+- `lakehouse.properties` now uses `iceberg.rest-catalog.*` properties
 - New initialization workflow required
 - OAuth credentials must be configured
 
 ## 📁 Project Structure
 
-\`\`\`
+```
 modern-data-stack/
 ├── docker-compose.yml              # Infrastructure as code
 ├── init-scripts/
@@ -237,13 +245,13 @@ modern-data-stack/
 │       └── Orders.js               # Semantic layer definitions
 ├── POLARIS_TRINO_CONFIG.md         # Configuration notes
 └── README.md
-\`\`\`
+```
 
 ## 🛠️ Common Operations
 
 ### Managing Services
 
-\`\`\`bash
+```bash
 # View service status
 docker compose ps
 
@@ -259,11 +267,11 @@ docker compose down
 
 # Stop and remove volumes (fresh start)
 docker compose down -v
-\`\`\`
+```
 
 ### Polaris Catalog Management
 
-\`\`\`bash
+```bash
 # Check if catalog exists
 bash init-scripts/polaris/check-what-broke.sh
 
@@ -272,11 +280,11 @@ bash init-scripts/polaris/recreate-catalog.sh
 
 # View Polaris credentials
 docker compose logs polaris | grep "root principal credentials"
-\`\`\`
+```
 
 ### Working with Trino
 
-\`\`\`bash
+```bash
 # Interactive Trino CLI
 docker compose exec trino trino
 
@@ -286,11 +294,11 @@ SHOW SCHEMAS IN lakehouse;
 SHOW TABLES IN lakehouse.dbt_marts;
 
 # Exit: Ctrl+D or \q
-\`\`\`
+```
 
 ### dbt Development
 
-\`\`\`bash
+```bash
 # Run all models
 docker compose exec dbt dbt run
 
@@ -302,11 +310,11 @@ docker compose exec dbt dbt test
 
 # Generate documentation
 docker compose exec dbt dbt docs generate
-\`\`\`
+```
 
 ### Data Loading
 
-\`\`\`bash
+```bash
 # Upload additional Parquet files to MinIO
 docker compose cp /path/to/file.parquet mc:/tmp/
 docker compose exec mc mc cp /tmp/file.parquet myminio/raw-data/new-dataset/
@@ -315,7 +323,7 @@ docker compose exec mc mc cp /tmp/file.parquet myminio/raw-data/new-dataset/
 docker compose exec trino trino --execute "
 CREATE TABLE lakehouse.raw_data.new_table (...)
 WITH (format = 'PARQUET', external_location = 's3://raw-data/new-dataset/');"
-\`\`\`
+```
 
 ## 🐛 Troubleshooting
 
@@ -323,7 +331,7 @@ WITH (format = 'PARQUET', external_location = 's3://raw-data/new-dataset/');"
 
 **Problem:** Trino cannot see lakehouse catalog
 
-\`\`\`bash
+```bash
 # 1. Check Polaris is running
 docker compose ps polaris
 
@@ -335,18 +343,18 @@ cat trino/catalog/lakehouse.properties
 
 # 4. Recreate catalog if needed
 bash init-scripts/polaris/recreate-catalog.sh
-\`\`\`
+```
 
 ### Trino Won't Start
 
 **Problem:** Configuration property errors
 
-Check \`lakehouse.properties\` has the correct format. See [POLARIS_TRINO_CONFIG.md](POLARIS_TRINO_CONFIG.md) for details.
+Check `lakehouse.properties` has the correct format. See [POLARIS_TRINO_CONFIG.md](POLARIS_TRINO_CONFIG.md) for details.
 
 **Critical property for MinIO:**
-\`\`\`properties
+```properties
 fs.native-s3.enabled=true
-\`\`\`
+```
 
 Without this, you'll get "No factory for location: s3://..." errors.
 
@@ -354,17 +362,17 @@ Without this, you'll get "No factory for location: s3://..." errors.
 
 **Problem:** Schema 'marts' does not exist
 
-Cube.js must reference \`dbt_marts\`, not \`marts\`:
+Cube.js must reference `dbt_marts`, not `marts`:
 
-\`\`\`yaml
+```yaml
 # docker-compose.yml
 CUBEJS_DB_SCHEMA: dbt_marts  # Not just "marts"
-\`\`\`
+```
 
-\`\`\`javascript
+```javascript
 // cube/model/Orders.js
-sql: \`SELECT * FROM lakehouse.dbt_marts.fct_orders\`
-\`\`\`
+sql: `SELECT * FROM lakehouse.dbt_marts.fct_orders`
+```
 
 ### dbt Run Fails
 
@@ -372,13 +380,13 @@ sql: \`SELECT * FROM lakehouse.dbt_marts.fct_orders\`
 
 Ensure raw data is loaded:
 
-\`\`\`bash
+```bash
 # Check if user_events table exists
 docker compose exec trino trino --execute "
 SELECT COUNT(*) FROM lakehouse.raw_data.user_events;"
 
 # If not, load the data (see "Load Sample Data" section)
-\`\`\`
+```
 
 ## 🚀 Scaling to Production
 
@@ -408,7 +416,7 @@ When scaling beyond proof-of-concept:
 
 ### Hybrid Deployment Example
 
-\`\`\`yaml
+```yaml
 # Mix open-source and managed services
 Storage: Self-hosted MinIO (data sovereignty)
 Catalog: Self-hosted Polaris (control)
@@ -416,7 +424,7 @@ Compute: Starburst Galaxy (performance)
 Transform: dbt Cloud (productivity)
 Semantic: Cube Cloud (AI features)
 BI: Metabase Cloud (reliability)
-\`\`\`
+```
 
 ## 🎓 Learning Resources
 
@@ -455,10 +463,11 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## 🏷️ Tags
 
-\`#DataEngineering\` \`#ModernDataStack\` \`#OpenSource\` \`#ApachePolaris\` \`#ApacheIceberg\` \`#Trino\` \`#dbt\` \`#VendorAgnostic\` \`#DataLakehouse\` \`#DataSovereignty\`
+`#DataEngineering` `#ModernDataStack` `#OpenSource` `#ApachePolaris` `#ApacheIceberg` `#Trino` `#dbt` `#VendorAgnostic` `#DataLakehouse` `#DataSovereignty`
 
 ---
 
 **Built with ❤️ for the data community**
 
 *Proving that vendor-agnostic, open-source data infrastructure is not just possible—it's practical.*
+
