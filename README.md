@@ -4,12 +4,13 @@
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
 [![Apache Polaris](https://img.shields.io/badge/catalog-Apache%20Polaris-orange.svg)](https://polaris.apache.org/)
 [![Trino](https://img.shields.io/badge/federation-Trino-blue.svg)](https://trino.io/)
+[![Claude MCP](https://img.shields.io/badge/AI-Claude%20MCP-purple.svg)](https://modelcontextprotocol.io/)
 
-> A complete, production-ready modern data stack built entirely with open-source components. Demonstrates cross-database federation, lakehouse architecture with Apache Iceberg, dbt transformations, semantic layer, and self-service BI—all vendor-agnostic and Git-based.
+> A complete, production-ready modern data stack built entirely with open-source components. Demonstrates cross-database federation, lakehouse architecture with Apache Iceberg, dbt transformations, semantic layer, and self-service BI—all vendor-agnostic and Git-based. **Now with AI-powered natural language interface via Claude MCP.**
 
 ## 🎯 What This Stack Delivers
 
-**v2.0:** Migrated from Hive Metastore to **Apache Polaris** (Iceberg REST catalog) for modern lakehouse capabilities with improved authentication and setup automation.
+**v2.0:** Migrated from Hive Metastore to **Apache Polaris** (Iceberg REST catalog) for modern lakehouse capabilities with improved authentication and setup automation. **Plus: AI-powered interface with Claude MCP for natural language data exploration.**
 
 This implementation proves that enterprise-grade data architecture is achievable without vendor lock-in:
 - ✅ **Cross-database federation** via Trino - query PostgreSQL, MySQL, and object storage simultaneously
@@ -17,10 +18,11 @@ This implementation proves that enterprise-grade data architecture is achievable
 - ✅ **Git-based transformations** with dbt - version-controlled SQL models
 - ✅ **Semantic layer** with Cube.js - centralized metrics and governance
 - ✅ **Self-service analytics** with Metabase - drag-and-drop visualization
+- ✅ **AI-powered interface** with Claude MCP - natural language queries and exploration
 - ✅ **Full data sovereignty** - complete control over data location and processing
 - ✅ **Hybrid-ready** - mix self-hosted with managed services as needed
 
-**Processing synthetic e-commerce data:** Orders from PostgreSQL → Product catalogs from MySQL → User events from object storage → Unified analytics layer.
+**Processing synthetic e-commerce data:** Orders from PostgreSQL → Product catalogs from MySQL → User events from object storage → Unified analytics layer → AI-powered natural language interface.
 
 ## 🏗️ Architecture
 
@@ -28,6 +30,12 @@ This implementation proves that enterprise-grade data architecture is achievable
                     Modern Data Stack v2 Architecture
                     
 ┌─────────────────────────────────────────────────────────────────┐
+│                    AI INTERFACE (NEW!)                          │
+│              Claude MCP - Natural Language Layer                │
+│        "What's our revenue by country this quarter?"            │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
 │                        DATA SOURCES                              │
 ├─────────────────────────────────────────────────────────────────┤
 │  PostgreSQL        MySQL           MinIO (S3-compatible)        │
@@ -81,6 +89,7 @@ This implementation proves that enterprise-grade data architecture is achievable
 - Docker Desktop (with Docker Compose)
 - 8GB RAM minimum (16GB recommended)
 - 10GB free disk space
+- **Optional:** Claude Desktop for AI interface
 
 ### Installation
 
@@ -144,6 +153,40 @@ docker compose exec trino trino --execute "SHOW SCHEMAS IN lakehouse;"
 docker compose exec trino trino --execute "SHOW TABLES IN lakehouse.dbt_marts;"
 ```
 
+### 🤖 Optional: Setup AI Interface (Claude MCP)
+
+Experience natural language queries to your lakehouse:
+
+```bash
+# Install Claude Desktop
+# Download from: https://claude.ai/download
+
+# Install Python dependencies
+/opt/homebrew/bin/python3 -m pip install mcp trino requests
+
+# Configure Claude Desktop
+cat > ~/Library/Application\ Support/Claude/claude_desktop_config.json << EOF
+{
+  "mcpServers": {
+    "trino": {
+      "command": "python3",
+      "args": [
+        "$(pwd)/mcp-servers/trino/server.py"
+      ]
+    }
+  }
+}
+EOF
+
+# Restart Claude Desktop
+# Now you can query your lakehouse in natural language!
+```
+
+**Try it:**
+- "What schemas exist in the lakehouse?"
+- "Show me tables in dbt_marts"
+- "What's the total revenue from fct_orders?"
+
 ### Access Points
 
 | Service | URL | Credentials |
@@ -153,6 +196,7 @@ docker compose exec trino trino --execute "SHOW TABLES IN lakehouse.dbt_marts;"
 | **Metabase** | http://localhost:3000 | Setup on first visit |
 | **MinIO Console** | http://localhost:9001 | admin / password123 |
 | **Polaris API** | http://localhost:8181 | OAuth (auto-configured) |
+| **Claude MCP** | Claude Desktop App | Natural language interface |
 
 ## 📊 Demo Query
 
@@ -170,6 +214,11 @@ FROM lakehouse.dbt_marts.fct_orders
 GROUP BY product_name, supplier_country
 ORDER BY total_revenue DESC
 LIMIT 10;"
+```
+
+**Or ask Claude:**
+```
+"Show me the top 10 products by revenue, grouped by supplier country"
 ```
 
 This query:
@@ -203,6 +252,12 @@ This query:
 - `fs.native-s3.enabled=true` enables Trino native S3
 - Required for Polaris REST catalog with MinIO
 - Fixes "No factory for location" errors
+
+#### 5. **🆕 AI-Powered Interface (Claude MCP)**
+- Natural language queries to lakehouse
+- Conversational schema exploration
+- No SQL knowledge required
+- Demonstrates modern AI + data integration
 
 ### Breaking Changes from v1
 - Hive Metastore container removed
@@ -243,6 +298,9 @@ modern-data-stack/
 ├── cube/
 │   └── model/
 │       └── Orders.js               # Semantic layer definitions
+├── mcp-servers/                    # 🆕 AI Interface
+│   └── trino/
+│       └── server.py               # Claude MCP server
 ├── POLARIS_TRINO_CONFIG.md         # Configuration notes
 └── README.md
 ```
@@ -280,6 +338,11 @@ bash init-scripts/polaris/recreate-catalog.sh
 
 # View Polaris credentials
 docker compose logs polaris | grep "root principal credentials"
+
+# Update Trino with new credentials (if needed)
+CREDS=$(docker compose logs polaris | grep "root principal credentials" | tail -1 | sed 's/.*credentials: //')
+sed -i.bak "s/iceberg.rest-catalog.oauth2.credential=.*/iceberg.rest-catalog.oauth2.credential=$CREDS/" trino/catalog/lakehouse.properties
+docker compose restart trino
 ```
 
 ### Working with Trino
@@ -323,6 +386,20 @@ docker compose exec mc mc cp /tmp/file.parquet myminio/raw-data/new-dataset/
 docker compose exec trino trino --execute "
 CREATE TABLE lakehouse.raw_data.new_table (...)
 WITH (format = 'PARQUET', external_location = 's3://raw-data/new-dataset/');"
+```
+
+### Using Claude MCP
+
+```bash
+# Check MCP server status
+tail -f ~/Library/Logs/Claude/mcp-server-trino.log
+
+# Test MCP server manually
+cd mcp-servers/trino
+python3 server.py
+
+# Restart Claude Desktop to reload MCP servers
+# Then ask Claude natural language questions about your data
 ```
 
 ## 🐛 Troubleshooting
@@ -388,6 +465,29 @@ SELECT COUNT(*) FROM lakehouse.raw_data.user_events;"
 # If not, load the data (see "Load Sample Data" section)
 ```
 
+### Claude MCP Not Working
+
+**Problem:** Claude can't connect to MCP server
+
+```bash
+# Check logs
+tail -50 ~/Library/Logs/Claude/mcp-server-trino.log
+
+# Common issue: Wrong Python
+# Install MCP in the Python Claude uses
+/opt/homebrew/bin/python3 -m pip install mcp trino requests
+
+# Test server manually
+cd mcp-servers/trino
+python3 server.py
+# Should show: "Starting Trino MCP server..."
+
+# Verify Trino is accessible
+curl http://localhost:8080
+
+# Restart Claude Desktop completely
+```
+
 ## 🚀 Scaling to Production
 
 ### Recommended Managed Services
@@ -424,6 +524,7 @@ Compute: Starburst Galaxy (performance)
 Transform: dbt Cloud (productivity)
 Semantic: Cube Cloud (AI features)
 BI: Metabase Cloud (reliability)
+AI: Claude MCP (natural language)
 ```
 
 ## 🎓 Learning Resources
@@ -435,11 +536,13 @@ BI: Metabase Cloud (reliability)
 - [dbt Documentation](https://docs.getdbt.com/)
 - [Cube.js Documentation](https://cube.dev/docs/)
 - [Metabase Documentation](https://www.metabase.com/docs/latest/)
+- [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ### Architecture Articles
 - [Building a Modern Lakehouse](https://www.starburst.io/learn/data-lakehouse/)
 - [dbt Best Practices](https://docs.getdbt.com/guides/best-practices)
 - [Iceberg Table Format](https://iceberg.apache.org/docs/latest/how-iceberg-works/)
+- [MCP: Connecting AI to Data](https://www.anthropic.com/news/model-context-protocol)
 
 ## 🤝 Contributing
 
@@ -451,6 +554,7 @@ Contributions welcome! Areas for improvement:
 - Implement incremental loading
 - Add more data sources
 - Create streaming ingestion with Kafka
+- Expand MCP capabilities (dbt generation, troubleshooting)
 
 ## 📝 License
 
@@ -463,11 +567,10 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## 🏷️ Tags
 
-`#DataEngineering` `#ModernDataStack` `#OpenSource` `#ApachePolaris` `#ApacheIceberg` `#Trino` `#dbt` `#VendorAgnostic` `#DataLakehouse` `#DataSovereignty`
+`#DataEngineering` `#ModernDataStack` `#OpenSource` `#ApachePolaris` `#ApacheIceberg` `#Trino` `#dbt` `#VendorAgnostic` `#DataLakehouse` `#DataSovereignty` `#AI` `#ClaudeMCP` `#NaturalLanguage`
 
 ---
 
 **Built with ❤️ for the data community**
 
-*Proving that vendor-agnostic, open-source data infrastructure is not just possible—it's practical.*
-
+*Proving that vendor-agnostic, open-source data infrastructure is not just possible—it's practical. Now with AI-powered natural language interface.*
