@@ -401,6 +401,100 @@ python3 server.py
 # Restart Claude Desktop to reload MCP servers
 # Then ask Claude natural language questions about your data
 ```
+## Streamlit Query Assistant
+
+AI-powered natural language SQL generation with dual backend comparison (Claude API vs Ollama).
+
+### Features
+- 🤖 Compare Claude API vs Local Ollama
+- 🔒 Data sovereignty option (100% local with Ollama)
+- 📊 Real-time performance metrics
+- 🗄️ Direct Trino integration via Python library
+- 📈 Query history and statistics
+
+### Technical Stack
+- **Claude API**: Anthropic's cloud API (claude-sonnet-3-5)
+- **Ollama**: Local inference (qwen2.5-coder:7b) on M2
+- **Trino**: Direct Python connection (not via MCP)
+
+### Quick Start
+```bash
+# 1. Start the data stack (if not already running)
+docker-compose up -d
+
+# 2. Setup Streamlit environment (first time only)
+cd streamlit-app
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 3. Configure API key (first time only)
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY from https://console.anthropic.com
+# Or leave it blank to use Ollama-only mode
+
+# 4. Install Ollama (first time only)
+brew install ollama
+ollama pull qwen2.5-coder:7b
+
+# 5. Run the app
+ollama serve &  # Start Ollama in background
+streamlit run app.py
+```
+
+App will open at: http://localhost:8501
+
+### Architecture
+```
+MacBook M2 (Native)
+├── Streamlit (UI)          → http://localhost:8501
+└── Ollama (Local AI)       → http://localhost:11434
+                ↓ HTTP
+        Docker Network
+        ├── Trino           → http://localhost:8080
+        ├── MinIO           → http://localhost:9000
+        └── Polaris         → http://localhost:8181
+```
+
+### Backend Comparison
+
+| Backend | Location | Speed | Cost | Privacy |
+|---------|----------|-------|------|---------|
+| Claude API | Anthropic Cloud | Fast (~50 tok/s) | ~$0.01/query | Sent to API |
+| Ollama | Local M2 | Moderate (~15 tok/s) | Free | 100% local |
+
+### Usage Examples
+
+1. **Ollama Only**: Select "Local Ollama" for GDPR-compliant local processing
+2. **Claude Only**: Select "Claude API" for fastest results
+3. **Comparison Mode**: Select "Compare Both" to see side-by-side results
+
+### Note on MCP
+
+This Streamlit app uses **direct API calls**, not MCP (Model Context Protocol).
+- For MCP-based Trino integration, see the `mcp-servers/` directory
+- MCP is used in Claude Desktop with tool integration
+- This app: Simple programmatic API comparison
+
+### Troubleshooting
+
+**Trino Connection Failed:**
+```bash
+docker-compose ps              # Check services
+docker-compose logs trino     # View logs
+```
+
+**Ollama Not Found:**
+```bash
+ollama serve &                 # Start service
+ollama list                   # Verify models
+```
+
+**API Key Issues:**
+```bash
+# Verify .env file exists
+cat streamlit-app/.env | grep ANTHROPIC_API_KEY
+```
 
 ## 🐛 Troubleshooting
 
