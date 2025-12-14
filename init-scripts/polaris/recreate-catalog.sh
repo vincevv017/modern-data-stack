@@ -9,8 +9,8 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Your working credentials from yesterday
-CLIENT_ID="c0eb8bd3cf05ffaa"
-CLIENT_SECRET="7657a109c2c9473bb9cc00992417f877"
+CLIENT_ID="42f137db0abd914c"
+CLIENT_SECRET="d8306177805c259a74f21b5cf72a4e9f"
 POLARIS_URL="http://localhost:8181"
 
 echo "1️⃣  Authenticating to Polaris..."

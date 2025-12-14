@@ -10,6 +10,14 @@ dbt/logs/
 dbt/target/
 dbt/dbt_packages/
 
+# Cube.js
+cube/.cubestore/
+cube/node_modules/
+cube/.env
+cube/dist/
+
+
+
 # IDE files
 .DS_Store
 .idea/
@@ -24,3 +32,13 @@ dbt/dbt_packages/
 # Docker volumes (if accidentally in repo)
 *-data/
 volumes/
+**/data/
+**/metastore/
+**/archive/
+
+# Streamlit app
+streamlit-app/venv/
+streamlit-app/.env
+streamlit-app/__pycache__/
+streamlit-app/*.pyc
+streamlit-app/.streamlit/
