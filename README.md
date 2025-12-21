@@ -5,12 +5,13 @@
 [![Apache Polaris](https://img.shields.io/badge/catalog-Apache%20Polaris-orange.svg)](https://polaris.apache.org/)
 [![Trino](https://img.shields.io/badge/federation-Trino-blue.svg)](https://trino.io/)
 [![Claude MCP](https://img.shields.io/badge/AI-Claude%20MCP-purple.svg)](https://modelcontextprotocol.io/)
+[![Mistral AI](https://img.shields.io/badge/AI-Mistral-orange.svg)](https://mistral.ai/)
 
-> A complete, production-ready modern data stack built entirely with open-source components. Demonstrates cross-database federation, lakehouse architecture with Apache Iceberg, dbt transformations, semantic layer, and self-service BI—all vendor-agnostic and Git-based. **Now with AI-powered natural language interface via Claude MCP.**
+> A complete, production-ready modern data stack built entirely with open-source components. Demonstrates cross-database federation, lakehouse architecture with Apache Iceberg, dbt transformations, semantic layer, and self-service BI—all vendor-agnostic and Git-based. **Plus: Dual AI interfaces - Claude MCP for natural language exploration and Streamlit app for multi-provider comparison (Claude vs Mistral vs Ollama).**
 
 ## 🎯 What This Stack Delivers
 
-**v2.0:** Migrated from Hive Metastore to **Apache Polaris** (Iceberg REST catalog) for modern lakehouse capabilities with improved authentication and setup automation. **Plus: AI-powered interface with Claude MCP for natural language data exploration.**
+**v2.0:** Migrated from Hive Metastore to **Apache Polaris** (Iceberg REST catalog) for modern lakehouse capabilities with improved authentication and setup automation. **Plus: Dual AI interfaces - Claude MCP integration for Claude Desktop and Streamlit comparison app (Claude API vs Mistral AI vs Ollama local).**
 
 This implementation proves that enterprise-grade data architecture is achievable without vendor lock-in:
 - ✅ **Cross-database federation** via Trino - query PostgreSQL, MySQL, and object storage simultaneously
@@ -18,39 +19,39 @@ This implementation proves that enterprise-grade data architecture is achievable
 - ✅ **Git-based transformations** with dbt - version-controlled SQL models
 - ✅ **Semantic layer** with Cube.js - centralized metrics and governance
 - ✅ **Self-service analytics** with Metabase - drag-and-drop visualization
-- ✅ **AI-powered interface** with Claude MCP - natural language queries and exploration
+- ✅ **AI-powered interfaces** - Claude MCP for exploration + Streamlit for multi-provider comparison (Claude/Mistral/Ollama)
 - ✅ **Full data sovereignty** - complete control over data location and processing
 - ✅ **Hybrid-ready** - mix self-hosted with managed services as needed
 
 **Processing synthetic e-commerce data:** Orders from PostgreSQL → Product catalogs from MySQL → User events from object storage → Unified analytics layer → AI-powered natural language interface.
+
+![Trino](assets/trino.jpeg)
+![dbt](assets/dbt.jpeg)
+![cube.js](assets/cubjs.jpeg)
+![metabase](assets/metabase.jpeg)
+![Claude MCP](assets/claude_mcp.jpeg)
 
 ## 🏗️ Architecture
 
 ```
                     Modern Data Stack v2 Architecture
                     
-┌─────────────────────────────────────────────────────────────────┐
-│                    AI INTERFACE (NEW!)                          │
-│              Claude MCP - Natural Language Layer                │
-│        "What's our revenue by country this quarter?"            │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────────────┐
-│                        DATA SOURCES                              │
-├─────────────────────────────────────────────────────────────────┤
-│  PostgreSQL        MySQL           MinIO (S3-compatible)        │
-│  (Orders)          (Products)      (User Events - Parquet)      │
+┌───────────────────────────────────────────────────────────────┐
+│                        DATA SOURCES                           │
+├───────────────────────────────────────────────────────────────┤
+│  PostgreSQL        MySQL           MinIO (S3-compatible)      │
+│  (Orders)          (Products)      (User Events - Parquet)    │
 └──────┬─────────────┬───────────────┬──────────────────────────┘
        │             │               │
        └─────────────┴───────────────┘
                      │
-       ┌─────────────▼──────────────┐
-       │   FEDERATION LAYER          │
-       │   Trino (35+ connectors)    │
-       │   Real-time cross-DB joins  │
-       └─────────────┬───────────────┘
-                     │
-       ┌─────────────▼──────────────┐
+       ┌─────────────▼───────────────┐       ┌──────────────────────────┐
+       │   FEDERATION LAYER          │◄──────│  AI INTERFACES           │
+       │   Trino (35+ connectors)    │       │  • Claude MCP            │
+       │   Real-time cross-DB joins  │       │  • Streamlit (3-way)     │
+       └─────────────┬───────────────┘       │    Claude/Mistral/Ollama │
+                     │                       └──────────────────────────┘
+       ┌─────────────▼───────────────┐
        │   LAKEHOUSE CATALOG         │
        │   Apache Polaris            │
        │   (Iceberg REST Catalog)    │
@@ -59,7 +60,7 @@ This implementation proves that enterprise-grade data architecture is achievable
        │   - Schema evolution        │
        └─────────────┬───────────────┘
                      │
-       ┌─────────────▼──────────────┐
+       ┌─────────────▼───────────────┐
        │   TRANSFORMATION LAYER      │
        │   dbt Core                  │
        │   - Staging → Intermediate  │
@@ -67,7 +68,7 @@ This implementation proves that enterprise-grade data architecture is achievable
        │   - Writes Iceberg tables   │
        └─────────────┬───────────────┘
                      │
-       ┌─────────────▼──────────────┐
+       ┌─────────────▼───────────────┐
        │   SEMANTIC LAYER            │
        │   Cube.js                   │
        │   - Metrics definitions     │
@@ -75,7 +76,7 @@ This implementation proves that enterprise-grade data architecture is achievable
        │   - Pre-aggregations        │
        └─────────────┬───────────────┘
                      │
-       ┌─────────────▼──────────────┐
+       ┌─────────────▼───────────────┐
        │   VISUALIZATION             │
        │   Metabase                  │
        │   - Self-service BI         │
@@ -144,7 +145,8 @@ WITH (
 SELECT COUNT(*) FROM lakehouse.raw_data.user_events;
 EOSQL
 
-# Run dbt transformations
+# ⚠️ CRITICAL: Run dbt transformations to create dbt_marts tables
+# Without this, Cube.js and the AI interfaces won't work!
 docker compose exec dbt dbt run
 
 # Verify complete setup
@@ -298,9 +300,14 @@ modern-data-stack/
 ├── cube/
 │   └── model/
 │       └── Orders.js               # Semantic layer definitions
-├── mcp-servers/                    # 🆕 AI Interface
+├── mcp-servers/                    # 🆕 AI Interface (Claude MCP)
 │   └── trino/
 │       └── server.py               # Claude MCP server
+├── streamlit-app/                  # 🆕 AI Interface (Multi-Provider)
+│   ├── app.py                      # Streamlit application
+│   ├── requirements.txt            # Python dependencies
+│   ├── .env.example                # API key template
+│   └── README.md                   # Detailed documentation
 ├── POLARIS_TRINO_CONFIG.md         # Configuration notes
 └── README.md
 ```
@@ -401,100 +408,51 @@ python3 server.py
 # Restart Claude Desktop to reload MCP servers
 # Then ask Claude natural language questions about your data
 ```
-## Streamlit Query Assistant
+## 🤖 AI-Powered Query Interfaces
 
-AI-powered natural language SQL generation with dual backend comparison (Claude API vs Ollama).
+This project includes **two complementary AI interfaces** for different use cases:
 
-### Features
-- 🤖 Compare Claude API vs Local Ollama
-- 🔒 Data sovereignty option (100% local with Ollama)
-- 📊 Real-time performance metrics
-- 🗄️ Direct Trino integration via Python library
-- 📈 Query history and statistics
+### 1. Claude MCP Integration (Claude Desktop)
 
-### Technical Stack
-- **Claude API**: Anthropic's cloud API (claude-sonnet-3-5)
-- **Ollama**: Local inference (qwen2.5-coder:7b) on M2
-- **Trino**: Direct Python connection (not via MCP)
+Natural language interface integrated directly into Claude Desktop for interactive data exploration.
 
-### Quick Start
+**Use case:** Ad-hoc exploration, iterative analysis, conversational data discovery
+
+**Setup:** See "Optional: Setup AI Interface (Claude MCP)" section above
+
+---
+
+### 2. Streamlit Multi-Provider Comparison App
+
+Compare how different AI providers (Claude, Mistral AI, Ollama) generate SQL from natural language queries.
+
+📂 **Location:** `streamlit-app/` directory  
+📖 **Full documentation:** **[streamlit-app/README.md](streamlit-app/README.md)**
+
+**Use case:** Evaluate AI providers, data sovereignty requirements, cost optimization
+
+#### Quick Summary
+
+- **🇪🇺 European AI Sovereignty**: Mistral AI (EU) + Ollama (on-premises) for GDPR compliance
+- **⚖️ Three-Way Comparison**: Claude API vs Mistral AI vs Local Ollama
+- **💰 Cost Options**: Free tier (Mistral) + local (Ollama) + paid (Claude)
+- **📊 Performance Metrics**: Track generation time, success rates, SQL quality
+- **🎯 Stateless Design**: Each query is independent for clean comparisons
+
+#### One-Minute Quickstart (macOS)
+
 ```bash
-# 1. Start the data stack (if not already running)
-docker-compose up -d
-
-# 2. Setup Streamlit environment (first time only)
 cd streamlit-app
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-
-# 3. Configure API key (first time only)
-cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY from https://console.anthropic.com
-# Or leave it blank to use Ollama-only mode
-
-# 4. Install Ollama (first time only)
-brew install ollama
-ollama pull qwen2.5-coder:7b
-
-# 5. Run the app
-ollama serve &  # Start Ollama in background
-streamlit run app.py
+cp .env.example .env  # Optional: add MISTRAL_API_KEY (free) or ANTHROPIC_API_KEY
+brew install ollama && ollama serve & && ollama pull qwen2.5-coder:7b
+streamlit run app.py  # Opens at http://localhost:8501
 ```
 
-App will open at: http://localhost:8501
+**For detailed setup, usage, and troubleshooting:** See **[streamlit-app/README.md](streamlit-app/README.md)**
 
-### Architecture
-```
-MacBook M2 (Native)
-├── Streamlit (UI)          → http://localhost:8501
-└── Ollama (Local AI)       → http://localhost:11434
-                ↓ HTTP
-        Docker Network
-        ├── Trino           → http://localhost:8080
-        ├── MinIO           → http://localhost:9000
-        └── Polaris         → http://localhost:8181
-```
-
-### Backend Comparison
-
-| Backend | Location | Speed | Cost | Privacy |
-|---------|----------|-------|------|---------|
-| Claude API | Anthropic Cloud | Fast (~50 tok/s) | ~$0.01/query | Sent to API |
-| Ollama | Local M2 | Moderate (~15 tok/s) | Free | 100% local |
-
-### Usage Examples
-
-1. **Ollama Only**: Select "Local Ollama" for GDPR-compliant local processing
-2. **Claude Only**: Select "Claude API" for fastest results
-3. **Comparison Mode**: Select "Compare Both" to see side-by-side results
-
-### Note on MCP
-
-This Streamlit app uses **direct API calls**, not MCP (Model Context Protocol).
-- For MCP-based Trino integration, see the `mcp-servers/` directory
-- MCP is used in Claude Desktop with tool integration
-- This app: Simple programmatic API comparison
-
-### Troubleshooting
-
-**Trino Connection Failed:**
-```bash
-docker-compose ps              # Check services
-docker-compose logs trino     # View logs
-```
-
-**Ollama Not Found:**
-```bash
-ollama serve &                 # Start service
-ollama list                   # Verify models
-```
-
-**API Key Issues:**
-```bash
-# Verify .env file exists
-cat streamlit-app/.env | grep ANTHROPIC_API_KEY
-```
+---
 
 ## 🐛 Troubleshooting
 
@@ -661,10 +619,10 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## 🏷️ Tags
 
-`#DataEngineering` `#ModernDataStack` `#OpenSource` `#ApachePolaris` `#ApacheIceberg` `#Trino` `#dbt` `#VendorAgnostic` `#DataLakehouse` `#DataSovereignty` `#AI` `#ClaudeMCP` `#NaturalLanguage`
+`#DataEngineering` `#ModernDataStack` `#OpenSource` `#ApachePolaris` `#ApacheIceberg` `#Trino` `#dbt` `#VendorAgnostic` `#DataLakehouse` `#DataSovereignty` `#AI` `#ClaudeMCP` `#MistralAI` `#NaturalLanguage` `#EuropeanAI`
 
 ---
 
 **Built with ❤️ for the data community**
 
-*Proving that vendor-agnostic, open-source data infrastructure is not just possible—it's practical. Now with AI-powered natural language interface.*
+*Proving that vendor-agnostic, open-source data infrastructure is not just possible—it's practical. Now with dual AI interfaces for natural language exploration and multi-provider comparison.*
