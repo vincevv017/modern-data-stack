@@ -13,7 +13,7 @@ A Streamlit application that enables natural language querying of Trino data war
 - **Schema-Aware**: Automatically loads Trino schema context for accurate SQL generation
 - **Query History**: Track and export comparison results
 
-![Compare All Mode](assets/compare-all-mode.png)
+![Compare All Mode](assets/compare-all-mode.jpg)
 
 ## 🏗️ Architecture
 
@@ -400,7 +400,6 @@ MIT License - See LICENSE file
 
 **Vincent Vikor**
 - Exploring modern data stack and AI-powered analytics
-- Published research on AI/BI adoption frameworks (CRISP-DM)
 
 ---
 
