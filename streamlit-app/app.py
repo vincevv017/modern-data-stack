@@ -6,6 +6,7 @@ import pandas as pd
 import time
 from datetime import datetime
 from anthropic import Anthropic
+from mistralai import Mistral
 import os
 from dotenv import load_dotenv
 import json
@@ -29,15 +30,23 @@ OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
+MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+
 # Initialize clients
 if ANTHROPIC_API_KEY:
     anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
 else:
     anthropic_client = None
 
+if MISTRAL_API_KEY:
+    mistral_client = Mistral(api_key=MISTRAL_API_KEY)
+else:
+    mistral_client = None
+
 # Page config
 st.set_page_config(
-    page_title="Trino Query Assistant - Dual Mode",
+    page_title="Trino Query Assistant - Multi-Provider",
     page_icon="🗄️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -342,6 +351,63 @@ Always use schema.table format. Return only SELECT statements.""",
         elapsed_time = time.time() - start_time
         return None, elapsed_time, str(e), None
 
+def generate_sql_with_mistral(user_query: str, schema_context: dict) -> tuple:
+    """Use Mistral to generate SQL from natural language"""
+    
+    if not mistral_client:
+        return None, 0, "Mistral API key not configured", None
+    
+    start_time = time.time()
+    
+    schema_desc = format_schema_for_prompt(schema_context)
+    
+    system_prompt = f"""You are a SQL expert specializing in Trino SQL. Based on user questions, provide:
+1. A brief explanation of your query approach (1 sentence)
+2. The SQL query
+
+{schema_desc}
+
+Format your response exactly like this:
+EXPLANATION: [one sentence explaining the query approach]
+SQL:
+[the SQL query without markdown or code blocks]
+
+Always use schema.table format. Return only SELECT statements."""
+    
+    try:
+        response = mistral_client.chat.complete(
+            model=MISTRAL_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_query}
+            ],
+            temperature=0.1,
+            max_tokens=1000
+        )
+        
+        full_response = response.choices[0].message.content.strip()
+        
+        # Parse explanation and SQL
+        explanation = ""
+        sql = ""
+        
+        if "EXPLANATION:" in full_response and "SQL:" in full_response:
+            parts = full_response.split("SQL:")
+            explanation = parts[0].replace("EXPLANATION:", "").strip()
+            sql = parts[1].strip()
+        else:
+            sql = full_response
+        
+        # Clean up formatting
+        sql = sql.replace('```sql', '').replace('```', '').strip().rstrip(';')
+        
+        elapsed_time = time.time() - start_time
+        return sql, elapsed_time, None, explanation
+        
+    except Exception as e:
+        elapsed_time = time.time() - start_time
+        return None, elapsed_time, str(e), None
+
 def execute_sql(sql: str) -> tuple:
     """Execute SQL query against Trino and return DataFrame with timing"""
     start_time = time.time()
@@ -387,13 +453,15 @@ with st.sidebar:
     # Create clickable options with custom styling
     backend_mode = st.radio(
     "Select Backend:",
-    ["🦙 Local Ollama", "🤖 Claude API", "⚖️ Compare Both"],
+    ["🦙 Local Ollama", "🤖 Claude API", "🇫🇷 Mistral AI", "⚖️ Compare All"],
     index=0,  # Ollama as default
     help="Choose which AI backend to use for SQL generation"
 )
     
     if backend_mode == "🦙 Local Ollama":
         st.caption("✅ Data stays on your Mac - GDPR compliant")
+    elif backend_mode == "🇫🇷 Mistral AI":
+        st.caption("🇪🇺 European AI sovereignty")
     
     st.divider()
     
@@ -435,6 +503,7 @@ with st.sidebar:
     # Model information
     st.subheader("🤖 Models")
     st.text(f"Claude: {CLAUDE_MODEL[:25]}...")
+    st.text(f"Mistral: {MISTRAL_MODEL}")
     st.text(f"Ollama: {OLLAMA_MODEL}")
     
     st.divider()
@@ -474,19 +543,25 @@ with st.sidebar:
         
         # Calculate averages
         claude_times = [q.get('claude_gen_time', 0) for q in st.session_state.comparison_history if 'claude_gen_time' in q]
+        mistral_times = [q.get('mistral_gen_time', 0) for q in st.session_state.comparison_history if 'mistral_gen_time' in q]
         ollama_times = [q.get('ollama_gen_time', 0) for q in st.session_state.comparison_history if 'ollama_gen_time' in q]
         
         if claude_times:
             st.metric("Avg Claude Time", f"{sum(claude_times)/len(claude_times):.2f}s")
+        if mistral_times:
+            st.metric("Avg Mistral Time", f"{sum(mistral_times)/len(mistral_times):.2f}s")
         if ollama_times:
             st.metric("Avg Ollama Time", f"{sum(ollama_times)/len(ollama_times):.2f}s")
         
         # Success rates
         claude_success = sum(1 for q in st.session_state.comparison_history if q.get('claude_success'))
+        mistral_success = sum(1 for q in st.session_state.comparison_history if q.get('mistral_success'))
         ollama_success = sum(1 for q in st.session_state.comparison_history if q.get('ollama_success'))
         
         if claude_times:
             st.metric("Claude Success", f"{(claude_success/len(claude_times)*100):.0f}%")
+        if mistral_times:
+            st.metric("Mistral Success", f"{(mistral_success/len(mistral_times)*100):.0f}%")
         if ollama_times:
             st.metric("Ollama Success", f"{(ollama_success/len(ollama_times)*100):.0f}%")
     
@@ -515,8 +590,8 @@ with st.sidebar:
             st.session_state.example_query = example
 
 # Main content
-st.title("🗄️ Trino Query Assistant - Dual Mode")
-st.caption("Compare Claude API vs Local Ollama for SQL generation")
+st.title("🗄️ Trino Query Assistant - Multi-Provider AI")
+st.caption("Compare Claude API vs Mistral AI vs Local Ollama for SQL generation")
 
 # Load schema if not already loaded
 if st.session_state.schema_context is None:
@@ -546,14 +621,15 @@ if user_query:
     }
     
     # Determine which backends to run
-    run_claude = backend_mode in ["🤖 Claude API", "⚖️ Compare Both"]
-    run_ollama = backend_mode in ["🦙 Local Ollama", "⚖️ Compare Both"]
+    run_claude = backend_mode in ["🤖 Claude API", "⚖️ Compare All"]
+    run_mistral = backend_mode in ["🇫🇷 Mistral AI", "⚖️ Compare All"]
+    run_ollama = backend_mode in ["🦙 Local Ollama", "⚖️ Compare All"]
     
     # Create columns based on mode
-    if backend_mode == "⚖️ Compare Both":
-        claude_col, ollama_col = st.columns(2)
+    if backend_mode == "⚖️ Compare All":
+        claude_col, mistral_col, ollama_col = st.columns(3)
     else:
-        claude_col = ollama_col = st.container()
+        claude_col = mistral_col = ollama_col = st.container()
     
     # Claude API
     if run_claude:
@@ -597,6 +673,49 @@ if user_query:
                             comparison_result['claude_exec_time'] = exec_time
                             comparison_result['claude_rows'] = len(df)
                             comparison_result['claude_success'] = True
+    
+    # Mistral AI
+    if run_mistral:
+        with mistral_col:
+            st.markdown("### 🇫🇷 Mistral AI")
+            
+            with st.spinner("Generating SQL with Mistral..."):
+                mistral_sql, mistral_gen_time, mistral_error, mistral_explanation = generate_sql_with_mistral(
+                    user_query,
+                    st.session_state.schema_context
+                )
+                
+                if mistral_error:
+                    st.error(f"❌ Generation Error: {mistral_error}")
+                    comparison_result['mistral_error'] = mistral_error
+                    comparison_result['mistral_success'] = False
+                else:
+                    # Show explanation
+                    if mistral_explanation:
+                        st.info(f"💭 {mistral_explanation}")
+                    
+                    st.code(mistral_sql, language="sql")
+                    st.caption(f"⏱️ Generation: {mistral_gen_time:.2f}s")
+                    
+                    comparison_result['mistral_sql'] = mistral_sql
+                    comparison_result['mistral_gen_time'] = mistral_gen_time
+                    comparison_result['mistral_explanation'] = mistral_explanation
+                    
+                    # Execute query
+                    with st.spinner("Executing..."):
+                        df, exec_time, exec_error = execute_sql(mistral_sql)
+                        
+                        if exec_error:
+                            st.error(f"❌ {exec_error}")
+                            comparison_result['mistral_exec_error'] = exec_error
+                            comparison_result['mistral_success'] = False
+                        else:
+                            st.dataframe(df, use_container_width=True)
+                            st.success(f"✅ {len(df)} rows in {exec_time:.2f}s")
+                            
+                            comparison_result['mistral_exec_time'] = exec_time
+                            comparison_result['mistral_rows'] = len(df)
+                            comparison_result['mistral_success'] = True
     
     # Local Ollama
     if run_ollama:
@@ -644,40 +763,40 @@ if user_query:
     # Save comparison
     st.session_state.comparison_history.append(comparison_result)
     
-    # Comparison summary (only in Compare Both mode)
-    if backend_mode == "⚖️ Compare Both" and 'claude_sql' in comparison_result and 'ollama_sql' in comparison_result:
+    # Comparison summary (only in Compare All mode)
+    if backend_mode == "⚖️ Compare All":
         st.divider()
         st.markdown("### 📊 Comparison Summary")
         
-        col1, col2, col3, col4 = st.columns(4)
+        # Show all pairwise comparisons if multiple succeeded
+        results_table = []
         
-        with col1:
-            if comparison_result.get('claude_gen_time') and comparison_result.get('ollama_gen_time'):
-                faster = "Claude" if comparison_result['claude_gen_time'] < comparison_result['ollama_gen_time'] else "Ollama"
-                st.metric(
-                    "Faster Generation",
-                    faster,
-                    f"{abs(comparison_result['claude_gen_time'] - comparison_result['ollama_gen_time']):.2f}s"
-                )
+        if 'claude_gen_time' in comparison_result:
+            results_table.append({
+                "Provider": "Claude",
+                "Gen Time": f"{comparison_result['claude_gen_time']:.2f}s",
+                "Rows": comparison_result.get('claude_rows', 'N/A'),
+                "Status": "✅" if comparison_result.get('claude_success') else "❌"
+            })
         
-        with col2:
-            sql_match = (
-                comparison_result.get('claude_sql', '').strip().lower() ==
-                comparison_result.get('ollama_sql', '').strip().lower()
-            )
-            st.metric("SQL Match", "✅ Yes" if sql_match else "❌ No")
+        if 'mistral_gen_time' in comparison_result:
+            results_table.append({
+                "Provider": "Mistral",
+                "Gen Time": f"{comparison_result['mistral_gen_time']:.2f}s",
+                "Rows": comparison_result.get('mistral_rows', 'N/A'),
+                "Status": "✅" if comparison_result.get('mistral_success') else "❌"
+            })
         
-        with col3:
-            if comparison_result.get('claude_rows') is not None and comparison_result.get('ollama_rows') is not None:
-                results_match = comparison_result['claude_rows'] == comparison_result['ollama_rows']
-                st.metric("Results Match", "✅ Yes" if results_match else "❌ No")
+        if 'ollama_gen_time' in comparison_result:
+            results_table.append({
+                "Provider": "Ollama",
+                "Gen Time": f"{comparison_result['ollama_gen_time']:.2f}s",
+                "Rows": comparison_result.get('ollama_rows', 'N/A'),
+                "Status": "✅" if comparison_result.get('ollama_success') else "❌"
+            })
         
-        with col4:
-            both_success = (
-                comparison_result.get('claude_success', False) and
-                comparison_result.get('ollama_success', False)
-            )
-            st.metric("Both Succeeded", "✅ Yes" if both_success else "❌ No")
+        if results_table:
+            st.table(pd.DataFrame(results_table))
 
 # Query History
 if st.session_state.comparison_history:
@@ -687,25 +806,30 @@ if st.session_state.comparison_history:
             idx = len(st.session_state.comparison_history) - i
             st.markdown(f"**Query {idx}**: `{result['query']}`")
             
-            cols = st.columns(4)
+            cols = st.columns(5)
             
             if 'claude_gen_time' in result:
                 with cols[0]:
                     status = "✅" if result.get('claude_success') else "❌"
                     st.caption(f"{status} Claude: {result['claude_gen_time']:.2f}s")
             
-            if 'ollama_gen_time' in result:
+            if 'mistral_gen_time' in result:
                 with cols[1]:
+                    status = "✅" if result.get('mistral_success') else "❌"
+                    st.caption(f"{status} Mistral: {result['mistral_gen_time']:.2f}s")
+            
+            if 'ollama_gen_time' in result:
+                with cols[2]:
                     status = "✅" if result.get('ollama_success') else "❌"
                     st.caption(f"{status} Ollama: {result['ollama_gen_time']:.2f}s")
             
             if 'claude_rows' in result:
-                with cols[2]:
+                with cols[3]:
                     st.caption(f"Claude: {result['claude_rows']} rows")
             
-            if 'ollama_rows' in result:
-                with cols[3]:
-                    st.caption(f"Ollama: {result['ollama_rows']} rows")
+            if 'mistral_rows' in result:
+                with cols[4]:
+                    st.caption(f"Mistral: {result['mistral_rows']} rows")
             
             st.divider()
         

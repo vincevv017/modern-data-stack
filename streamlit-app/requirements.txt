@@ -1,7 +1,8 @@
-streamlit==1.39.0
-ollama==0.4.4
-trino==0.329.0
-pandas==2.2.3
-anthropic==0.39.0
-python-dotenv==1.0.1
-sqlparse==0.5.1
+streamlit
+ollama>=0.4.7
+trino
+pandas
+anthropic>=0.45.2
+mistralai
+python-dotenv
+sqlparse
