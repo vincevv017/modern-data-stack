@@ -11,6 +11,8 @@
 
 ## 🎯 What This Stack Delivers
 
+**v2.1:** Added **dbt MetricFlow** with OSI-compatible semantic models—testing the promise of "define once, use everywhere" across semantic layer tools.
+
 **v2.0:** Migrated from Hive Metastore to **Apache Polaris** (Iceberg REST catalog) for modern lakehouse capabilities with improved authentication and setup automation. **Plus: Dual AI interfaces - Claude MCP integration for Claude Desktop and Streamlit comparison app (Claude API vs Mistral AI vs Ollama local).**
 
 This implementation proves that enterprise-grade data architecture is achievable without vendor lock-in:
@@ -18,6 +20,7 @@ This implementation proves that enterprise-grade data architecture is achievable
 - ✅ **Modern lakehouse** with Apache Polaris and Iceberg - ACID transactions, time travel, schema evolution
 - ✅ **Git-based transformations** with dbt - version-controlled SQL models
 - ✅ **Semantic layer** with Cube.js - centralized metrics and governance
+- ✅ **OSI-ready** semantic models with dbt MetricFlow - testing Open Semantic Interchange specification for vendor interoperability
 - ✅ **Self-service analytics** with Metabase - drag-and-drop visualization
 - ✅ **AI-powered interfaces** - Claude MCP for exploration + Streamlit for multi-provider comparison (Claude/Mistral/Ollama)
 - ✅ **Full data sovereignty** - complete control over data location and processing
@@ -154,6 +157,15 @@ docker compose exec trino trino --execute "SHOW CATALOGS;"
 docker compose exec trino trino --execute "SHOW SCHEMAS IN lakehouse;"
 docker compose exec trino trino --execute "SHOW TABLES IN lakehouse.dbt_marts;"
 ```
+### Setup MetricFlow
+
+```bash
+# Build time spine (calendar table)
+docker compose exec dbt dbt run --select metricflow_time_spine
+
+# Run validation script
+docker compose exec dbt bash dbt/scripts/validate-metricflow.sh
+```
 
 ### 🤖 Optional: Setup AI Interface (Claude MCP)
 
@@ -198,6 +210,7 @@ EOF
 | **Metabase** | http://localhost:3000 | Setup on first visit |
 | **MinIO Console** | http://localhost:9001 | admin / password123 |
 | **Polaris API** | http://localhost:8181 | OAuth (auto-configured) |
+| **MetricFlow API** | http://localhost:8001 | future use |
 | **Claude MCP** | Claude Desktop App | Natural language interface |
 
 ## 📊 Demo Query
@@ -297,6 +310,12 @@ modern-data-stack/
 │       ├── staging/                # Raw data models
 │       ├── intermediate/           # Business logic
 │       └── marts/                  # Analytics-ready facts
+│       └── semantic_models/  # v2.1: MetricFlow OSI definitions
+│           ├── orders.yml                    # Semantic model & metrics
+│           ├── metricflow_time_spine.sql     # Calendar table
+│           └── metricflow_time_spine.yml     # Time spine metadata
+│   └── scripts/
+│       └── validate-metricflow.sh  # v2.1: MetricFlow validation
 ├── cube/
 │   └── model/
 │       └── Orders.js               # Semantic layer definitions
@@ -516,6 +535,17 @@ SELECT COUNT(*) FROM lakehouse.raw_data.user_events;"
 
 # If not, load the data (see "Load Sample Data" section)
 ```
+### MetricFlow Issues
+
+**Error: "At least one time spine must be configured"**
+```bash
+# Build the time spine table
+docker compose exec dbt dbt run --select metricflow_time_spine
+```
+
+**Error: "The given input does not match any of the available group-by-items"**
+- Use entity-prefixed names: `order_id__supplier_country` not `supplier_country`
+- Check available dimensions: `docker compose exec dbt mf list metrics`
 
 ### Claude MCP Not Working
 
@@ -586,6 +616,7 @@ AI: Claude MCP (natural language)
 - [Apache Iceberg Docs](https://iceberg.apache.org/docs/latest/)
 - [Trino Documentation](https://trino.io/docs/current/)
 - [dbt Documentation](https://docs.getdbt.com/)
+- [dbt MetricFlow](https://github.com/dbt-labs/metricflow)
 - [Cube.js Documentation](https://cube.dev/docs/)
 - [Metabase Documentation](https://www.metabase.com/docs/latest/)
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
@@ -594,6 +625,7 @@ AI: Claude MCP (natural language)
 - [Building a Modern Lakehouse](https://www.starburst.io/learn/data-lakehouse/)
 - [dbt Best Practices](https://docs.getdbt.com/guides/best-practices)
 - [Iceberg Table Format](https://iceberg.apache.org/docs/latest/how-iceberg-works/)
+- [Open Semantic Interchange (OSI)](https://www.snowflake.com/blog/open-semantic-interchange/)
 - [MCP: Connecting AI to Data](https://www.anthropic.com/news/model-context-protocol)
 
 ## 🤝 Contributing

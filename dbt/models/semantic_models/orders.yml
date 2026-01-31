@@ -1,0 +1,62 @@
+semantic_models:
+  - name: orders
+    description: "E-commerce order transactions"
+    model: ref('fct_orders')
+    
+    defaults:
+      agg_time_dimension: order_date
+    
+    entities:
+      - name: order_id
+        type: primary
+      
+      - name: customer_id
+        type: foreign
+    
+    measures:
+      - name: total_revenue
+        description: "Sum of order amounts"
+        agg: sum
+        expr: revenue
+        agg_time_dimension: order_date
+      
+      - name: order_count
+        description: "Count of orders"
+        agg: count
+        expr: order_id
+        agg_time_dimension: order_date
+      
+      - name: avg_order_value
+        description: "Average order value"
+        agg: average  # Changed from 'avg' to 'average'
+        expr: revenue
+        agg_time_dimension: order_date
+    
+    dimensions:
+      - name: order_date
+        type: time
+        expr: order_date
+        type_params:
+          time_granularity: day
+      
+      - name: product_name
+        type: categorical
+        expr: product_name
+      
+      - name: supplier_country
+        type: categorical
+        expr: supplier_country
+
+metrics:
+  - name: total_revenue
+    description: "Total revenue across all orders"
+    type: simple
+    label: Total Revenue
+    type_params:
+      measure: total_revenue
+
+time_spines:
+  - name: time_spine
+    description: "Calendar table for time-based queries"
+    table: ref('metricflow_time_spine')
+    primary_column: date_day

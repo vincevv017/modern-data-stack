@@ -174,7 +174,26 @@ services:
       - lakehouse-network
     depends_on:
       - trino
-
+  metricflow:
+    build:
+      context: ./dbt-docker
+      dockerfile: Dockerfile
+    container_name: lakehouse-metricflow
+    platform: linux/arm64
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./dbt:/usr/app
+      - ./dbt/profiles.yml:/root/.dbt/profiles.yml
+    working_dir: /usr/app
+    environment:
+      DBT_PROFILES_DIR: /root/.dbt
+    command: mf service start --port 8001
+    networks:
+      - lakehouse-network
+    depends_on:
+      - trino
+      
   #############################################################################
   # SEMANTIC LAYER - Cube.js
   #############################################################################

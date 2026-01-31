@@ -8,8 +8,10 @@ RUN apt-get update && apt-get install -y \
 
 # Install dbt-core and dbt-trino with compatible versions
 RUN pip install --no-cache-dir \
-    dbt-core==1.7.4 \
-    dbt-trino==1.7.1
+    dbt-core \
+    dbt-trino \
+    dbt-metricflow \
+    keyring
 
 # Create work directory
 WORKDIR /usr/app
