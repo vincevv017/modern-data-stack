@@ -1,41 +1,42 @@
 semantic_models:
   - name: orders
-    description: "E-commerce order transactions"
+    description: "E-commerce order transactions from the analytics mart"
     model: ref('fct_orders')
-    
     defaults:
       agg_time_dimension: order_date
-    
+
     entities:
       - name: order_id
         type: primary
+        expr: order_id
       
       - name: customer_id
         type: foreign
-    
+        expr: customer_id
+
     measures:
       - name: total_revenue
         description: "Sum of order amounts"
         agg: sum
         expr: revenue
         agg_time_dimension: order_date
-      
+
       - name: order_count
-        description: "Count of orders"
+        description: "Total number of orders placed"
         agg: count
         expr: order_id
         agg_time_dimension: order_date
-      
-      - name: avg_order_value
-        description: "Average order value"
-        agg: average  # Changed from 'avg' to 'average'
-        expr: revenue
+
+      - name: distinct_customers
+        description: "Count of unique customers"
+        agg: count_distinct
+        expr: customer_id
         agg_time_dimension: order_date
-    
+
     dimensions:
       - name: order_date
         type: time
-        expr: order_date
+        expr: date_trunc('day', order_date)
         type_params:
           time_granularity: day
       
@@ -43,17 +44,242 @@ semantic_models:
         type: categorical
         expr: product_name
       
+      - name: product_category
+        type: categorical
+        expr: product_category
+      
+      - name: supplier_name
+        type: categorical
+        expr: supplier_name
+      
       - name: supplier_country
         type: categorical
         expr: supplier_country
+      
+      - name: revenue
+        type: categorical
+        expr: revenue
+      
+      - name: sustainability_score
+        type: categorical
+        expr: sustainability_score
 
+# Testing OSI official syntax based on tpcds_semantic_model.yaml
 metrics:
+  # Test 1: OSI official format with ai_context
   - name: total_revenue
-    description: "Total revenue across all orders"
     type: simple
     label: Total Revenue
+    description: "Total revenue across all orders in USD"
     type_params:
       measure: total_revenue
+    # OSI official syntax (from tpcds example):
+    ai_context:
+      description: "Use this metric for overall business performance. Excludes refunds and cancelled orders."
+    synonyms: ["sales", "income", "gross revenue", "top line", "revenue", "GMV", "turnover"]
+    dialect: trino
+    meta:
+      team: finance
+      tier: tier_1
+      business_owner: "CFO"
+      certification_status: "certified"
+
+  - name: total_orders
+    type: simple
+    label: Total Orders
+    description: "Total count of orders placed"
+    type_params:
+      measure: order_count
+    ai_context:
+      description: "Count of all completed order transactions"
+    synonyms: ["order count", "number of orders", "order volume", "transactions", "purchases"]
+    dialect: trino
+    meta:
+      team: operations
+      tier: tier_1
+      business_owner: "VP Operations"
+      certification_status: "certified"
+
+  - name: unique_customers
+    type: simple
+    label: Unique Customers
+    description: "Distinct count of customers who made purchases"
+    type_params:
+      measure: distinct_customers
+    ai_context:
+      description: "Unique customer identifier count for the period"
+    synonyms: ["customer count", "active customers", "buying customers", "purchasers", "buyers"]
+    dialect: trino
+    meta:
+      team: marketing
+      tier: tier_1
+      business_owner: "CMO"
+      certification_status: "certified"
+
+  # Filtered metrics
+  - name: high_value_orders
+    type: simple
+    label: High-Value Orders
+    description: "Count of orders with revenue greater than $100"
+    type_params:
+      measure: order_count
+    filter: "{{ Dimension('order_id__revenue') }} > 100"
+    ai_context:
+      description: "Premium orders exceeding $100 threshold"
+    synonyms: ["premium orders", "large orders", "high-ticket orders", "big orders"]
+    dialect: trino
+    meta:
+      team: product
+      tier: tier_2
+      business_owner: "VP Product"
+
+  - name: european_market_revenue
+    type: simple
+    label: European Market Revenue
+    description: "Revenue from European suppliers (France, Germany, Spain, Italy)"
+    type_params:
+      measure: total_revenue
+    filter: "{{ Dimension('order_id__supplier_country') }} IN ('France', 'Germany', 'Spain', 'Italy')"
+    ai_context:
+      description: "Revenue from EU-4 countries only"
+    synonyms: ["EU revenue", "Europe sales", "European income", "EMEA revenue"]
+    dialect: trino
+    meta:
+      team: regional_sales
+      tier: tier_2
+      business_owner: "VP EMEA Sales"
+
+  # Derived metrics
+  - name: revenue_per_order
+    type: derived
+    label: Revenue per Order
+    description: "Average order value (AOV) - total_revenue divided by total_orders"
+    type_params:
+      expr: total_revenue / NULLIF(total_orders, 0)
+      metrics:
+        - total_revenue
+        - total_orders
+    ai_context:
+      description: "Average basket size metric, industry benchmark is $75-125"
+    synonyms: ["AOV", "average order value", "average basket size", "order size", "basket value"]
+    dialect: trino
+    meta:
+      team: finance
+      tier: tier_1
+      business_owner: "CFO"
+      certification_status: "certified"
+
+  - name: revenue_per_customer
+    type: derived
+    label: Revenue per Customer
+    description: "Average revenue per customer - total_revenue divided by unique_customers"
+    type_params:
+      expr: total_revenue / NULLIF(unique_customers, 0)
+      metrics:
+        - total_revenue
+        - unique_customers
+    ai_context:
+      description: "Customer lifetime value indicator for the period"
+    synonyms: ["ARPU", "customer value", "per-customer revenue", "average customer spend"]
+    dialect: trino
+    meta:
+      team: marketing
+      tier: tier_2
+      business_owner: "CMO"
+
+  - name: high_value_order_rate
+    type: derived
+    label: High-Value Order Rate (%)
+    description: "Percentage of orders exceeding $100 threshold"
+    type_params:
+      expr: (high_value_orders / NULLIF(total_orders, 0)) * 100
+      metrics:
+        - high_value_orders
+        - total_orders
+    ai_context:
+      description: "Premium product mix indicator"
+    synonyms: ["premium order rate", "high-ticket percentage", "premium rate"]
+    dialect: trino
+    meta:
+      team: product
+      tier: tier_2
+      business_owner: "VP Product"
+
+  # Cumulative metrics
+  - name: cumulative_revenue
+    type: cumulative
+    label: Cumulative Revenue (YTD)
+    description: "Running total of revenue over time (year-to-date)"
+    type_params:
+      measure: total_revenue
+      cumulative_type_params:
+        grain_to_date: year
+    ai_context:
+      description: "Running total resets on January 1st each year"
+    synonyms: ["YTD revenue", "year-to-date sales", "running revenue total", "cumulative sales"]
+    dialect: trino
+    meta:
+      team: finance
+      tier: tier_1
+      business_owner: "CFO"
+
+  - name: cumulative_orders
+    type: cumulative
+    label: Cumulative Orders
+    description: "Running total of order count over time (year-to-date)"
+    type_params:
+      measure: order_count
+      cumulative_type_params:
+        grain_to_date: year
+    ai_context:
+      description: "Running order count, resets annually"
+    synonyms: ["YTD orders", "year-to-date order count", "running order total"]
+    dialect: trino
+    meta:
+      team: operations
+      tier: tier_2
+      business_owner: "VP Operations"
+
+  # Growth metrics
+  - name: revenue_growth_mom
+    type: derived
+    label: Revenue Growth (MoM %)
+    description: "Month-over-month revenue growth rate as percentage"
+    type_params:
+      expr: (total_revenue - total_revenue_prev_month) / NULLIF(total_revenue_prev_month, 0) * 100
+      metrics:
+        - name: total_revenue
+        - name: total_revenue
+          alias: total_revenue_prev_month
+          offset_window: 1 month
+    ai_context:
+      description: "Compare current month to previous month revenue"
+    synonyms: ["monthly growth", "MoM growth rate", "month-over-month change", "monthly change"]
+    dialect: trino
+    meta:
+      team: finance
+      tier: tier_1
+      business_owner: "CFO"
+
+  - name: revenue_wow
+    type: derived
+    label: Revenue Growth (WoW %)
+    description: "Week-over-week revenue change percentage for operational monitoring"
+    type_params:
+      expr: (total_revenue - total_revenue_prev_week) / NULLIF(total_revenue_prev_week, 0) * 100
+      metrics:
+        - name: total_revenue
+        - name: total_revenue
+          alias: total_revenue_prev_week
+          offset_window: 1 week
+    ai_context:
+      description: "Compare current week to previous week revenue"
+    synonyms: ["weekly growth", "WoW growth rate", "week-over-week change", "weekly change"]
+    dialect: trino
+    meta:
+      team: operations
+      tier: tier_2
+      business_owner: "VP Operations"
 
 time_spines:
   - name: time_spine
