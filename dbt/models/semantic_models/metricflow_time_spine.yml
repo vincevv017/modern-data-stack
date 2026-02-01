@@ -3,10 +3,14 @@ models:
     description: "Calendar table for MetricFlow time-based queries"
     config:
       materialized: table
-    meta:
-      metricflow:
-        time_spine:
-          standard_granularity_column: date_day
+
+time_spines:
+  - name: time_spine
+    description: "Calendar table for time-based queries"
+    table: ref('metricflow_time_spine')
+    primary_column: date_day
+    standard_granularity_column: date_day
     columns:
       - name: date_day
-        description: "Calendar date"
+        description: "Calendar date at day granularity"
+        granularity: day

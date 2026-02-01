@@ -6,6 +6,8 @@ profile: 'lakehouse'
 model-paths: ["models"]
 test-paths: ["tests"]
 
+
+
 models:
   greencard_analytics:
     staging:
