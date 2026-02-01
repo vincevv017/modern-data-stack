@@ -164,7 +164,19 @@ docker compose exec trino trino --execute "SHOW TABLES IN lakehouse.dbt_marts;"
 docker compose exec dbt dbt run --select metricflow_time_spine
 
 # Run validation script
-docker compose exec dbt bash dbt/scripts/validate-metricflow.sh
+bash dbt/scripts/validate-metricflow.sh
+```
+Expected output:
+
+```
+🔍 MetricFlow Validation Suite - Testing All 12 Metrics
+
+Total Tests:       22
+Passed:            20
+Expected Failures: 2  (growth metrics - need more time series data)
+Failed:            0
+
+✅ VALIDATION SUCCESSFUL!
 ```
 
 ### 🤖 Optional: Setup AI Interface (Claude MCP)
@@ -311,9 +323,9 @@ modern-data-stack/
 │       ├── intermediate/           # Business logic
 │       └── marts/                  # Analytics-ready facts
 │       └── semantic_models/  # v2.1: MetricFlow OSI definitions
-│           ├── orders.yml                    # Semantic model & metrics
-│           ├── metricflow_time_spine.sql     # Calendar table
-│           └── metricflow_time_spine.yml     # Time spine metadata
+│         ├── orders.yml                    # Semantic model & metrics
+│         ├── metricflow_time_spine.sql     # Calendar table
+│         └── metricflow_time_spine.yml     # Time spine metadata
 │   └── scripts/
 │       └── validate-metricflow.sh  # v2.1: MetricFlow validation
 ├── cube/
@@ -547,6 +559,20 @@ docker compose exec dbt dbt run --select metricflow_time_spine
 - Use entity-prefixed names: `order_id__supplier_country` not `supplier_country`
 - Check available dimensions: `docker compose exec dbt mf list metrics`
 
+**Errors related to the metrics**
+1. Clean the environment
+```
+docker compose exec dbt dbt clean
+```
+2. Force a full parse to rebuild the manifest
+```
+docker compose exec dbt dbt parse --no-partial-parse
+```
+3. Validate MetricFlow configs against the warehouse
+```
+docker compose exec dbt mf validate-configs
+```
+
 ### Claude MCP Not Working
 
 **Problem:** Claude can't connect to MCP server
@@ -617,6 +643,7 @@ AI: Claude MCP (natural language)
 - [Trino Documentation](https://trino.io/docs/current/)
 - [dbt Documentation](https://docs.getdbt.com/)
 - [dbt MetricFlow](https://github.com/dbt-labs/metricflow)
+- [OSI Specification](https://github.com/open-semantic-interchange/OSI)
 - [Cube.js Documentation](https://cube.dev/docs/)
 - [Metabase Documentation](https://www.metabase.com/docs/latest/)
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
@@ -625,7 +652,7 @@ AI: Claude MCP (natural language)
 - [Building a Modern Lakehouse](https://www.starburst.io/learn/data-lakehouse/)
 - [dbt Best Practices](https://docs.getdbt.com/guides/best-practices)
 - [Iceberg Table Format](https://iceberg.apache.org/docs/latest/how-iceberg-works/)
-- [Open Semantic Interchange (OSI)](https://www.snowflake.com/blog/open-semantic-interchange/)
+- [Open Semantic Interchange (OSI)](https://open-semantic-interchange.org)
 - [MCP: Connecting AI to Data](https://www.anthropic.com/news/model-context-protocol)
 
 ## 🤝 Contributing
