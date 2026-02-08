@@ -64,25 +64,13 @@ semantic_models:
         type: categorical
         expr: sustainability_score
 
-# Testing OSI official syntax based on tpcds_semantic_model.yaml
 metrics:
-  # Test 1: OSI official format with ai_context
   - name: total_revenue
     type: simple
     label: Total Revenue
     description: "Total revenue across all orders in USD"
     type_params:
       measure: total_revenue
-    # OSI official syntax (from tpcds example):
-    ai_context:
-      description: "Use this metric for overall business performance. Excludes refunds and cancelled orders."
-    synonyms: ["sales", "income", "gross revenue", "top line", "revenue", "GMV", "turnover"]
-    dialect: trino
-    meta:
-      team: finance
-      tier: tier_1
-      business_owner: "CFO"
-      certification_status: "certified"
 
   - name: total_orders
     type: simple
@@ -90,15 +78,6 @@ metrics:
     description: "Total count of orders placed"
     type_params:
       measure: order_count
-    ai_context:
-      description: "Count of all completed order transactions"
-    synonyms: ["order count", "number of orders", "order volume", "transactions", "purchases"]
-    dialect: trino
-    meta:
-      team: operations
-      tier: tier_1
-      business_owner: "VP Operations"
-      certification_status: "certified"
 
   - name: unique_customers
     type: simple
@@ -106,17 +85,7 @@ metrics:
     description: "Distinct count of customers who made purchases"
     type_params:
       measure: distinct_customers
-    ai_context:
-      description: "Unique customer identifier count for the period"
-    synonyms: ["customer count", "active customers", "buying customers", "purchasers", "buyers"]
-    dialect: trino
-    meta:
-      team: marketing
-      tier: tier_1
-      business_owner: "CMO"
-      certification_status: "certified"
 
-  # Filtered metrics
   - name: high_value_orders
     type: simple
     label: High-Value Orders
@@ -124,14 +93,6 @@ metrics:
     type_params:
       measure: order_count
     filter: "{{ Dimension('order_id__revenue') }} > 100"
-    ai_context:
-      description: "Premium orders exceeding $100 threshold"
-    synonyms: ["premium orders", "large orders", "high-ticket orders", "big orders"]
-    dialect: trino
-    meta:
-      team: product
-      tier: tier_2
-      business_owner: "VP Product"
 
   - name: european_market_revenue
     type: simple
@@ -140,16 +101,7 @@ metrics:
     type_params:
       measure: total_revenue
     filter: "{{ Dimension('order_id__supplier_country') }} IN ('France', 'Germany', 'Spain', 'Italy')"
-    ai_context:
-      description: "Revenue from EU-4 countries only"
-    synonyms: ["EU revenue", "Europe sales", "European income", "EMEA revenue"]
-    dialect: trino
-    meta:
-      team: regional_sales
-      tier: tier_2
-      business_owner: "VP EMEA Sales"
 
-  # Derived metrics
   - name: revenue_per_order
     type: derived
     label: Revenue per Order
@@ -159,15 +111,6 @@ metrics:
       metrics:
         - total_revenue
         - total_orders
-    ai_context:
-      description: "Average basket size metric, industry benchmark is $75-125"
-    synonyms: ["AOV", "average order value", "average basket size", "order size", "basket value"]
-    dialect: trino
-    meta:
-      team: finance
-      tier: tier_1
-      business_owner: "CFO"
-      certification_status: "certified"
 
   - name: revenue_per_customer
     type: derived
@@ -178,14 +121,6 @@ metrics:
       metrics:
         - total_revenue
         - unique_customers
-    ai_context:
-      description: "Customer lifetime value indicator for the period"
-    synonyms: ["ARPU", "customer value", "per-customer revenue", "average customer spend"]
-    dialect: trino
-    meta:
-      team: marketing
-      tier: tier_2
-      business_owner: "CMO"
 
   - name: high_value_order_rate
     type: derived
@@ -196,16 +131,7 @@ metrics:
       metrics:
         - high_value_orders
         - total_orders
-    ai_context:
-      description: "Premium product mix indicator"
-    synonyms: ["premium order rate", "high-ticket percentage", "premium rate"]
-    dialect: trino
-    meta:
-      team: product
-      tier: tier_2
-      business_owner: "VP Product"
 
-  # Cumulative metrics
   - name: cumulative_revenue
     type: cumulative
     label: Cumulative Revenue (YTD)
@@ -214,14 +140,6 @@ metrics:
       measure: total_revenue
       cumulative_type_params:
         grain_to_date: year
-    ai_context:
-      description: "Running total resets on January 1st each year"
-    synonyms: ["YTD revenue", "year-to-date sales", "running revenue total", "cumulative sales"]
-    dialect: trino
-    meta:
-      team: finance
-      tier: tier_1
-      business_owner: "CFO"
 
   - name: cumulative_orders
     type: cumulative
@@ -231,16 +149,7 @@ metrics:
       measure: order_count
       cumulative_type_params:
         grain_to_date: year
-    ai_context:
-      description: "Running order count, resets annually"
-    synonyms: ["YTD orders", "year-to-date order count", "running order total"]
-    dialect: trino
-    meta:
-      team: operations
-      tier: tier_2
-      business_owner: "VP Operations"
 
-  # Growth metrics
   - name: revenue_growth_mom
     type: derived
     label: Revenue Growth (MoM %)
@@ -252,14 +161,6 @@ metrics:
         - name: total_revenue
           alias: total_revenue_prev_month
           offset_window: 1 month
-    ai_context:
-      description: "Compare current month to previous month revenue"
-    synonyms: ["monthly growth", "MoM growth rate", "month-over-month change", "monthly change"]
-    dialect: trino
-    meta:
-      team: finance
-      tier: tier_1
-      business_owner: "CFO"
 
   - name: revenue_wow
     type: derived
@@ -272,14 +173,6 @@ metrics:
         - name: total_revenue
           alias: total_revenue_prev_week
           offset_window: 1 week
-    ai_context:
-      description: "Compare current week to previous week revenue"
-    synonyms: ["weekly growth", "WoW growth rate", "week-over-week change", "weekly change"]
-    dialect: trino
-    meta:
-      team: operations
-      tier: tier_2
-      business_owner: "VP Operations"
 
 time_spines:
   - name: time_spine
